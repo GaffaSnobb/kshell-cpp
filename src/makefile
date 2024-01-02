@@ -13,7 +13,7 @@ $(TARGET): $(OBJS)
 tools.o: tools.cpp tools.h
 	$(CXX) $(CXXFLAGS) -c tools.cpp
 
-loaders.o: loaders.cpp tools.h
+loaders.o: loaders.cpp tools.h data_structures.h
 	$(CXX) $(CXXFLAGS) -c loaders.cpp
 
 clean:
