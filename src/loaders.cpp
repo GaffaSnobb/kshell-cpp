@@ -1,6 +1,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <stdexcept>
 
 #include "tools.hpp"
 #include "data_structures.hpp"
@@ -17,7 +18,8 @@ void make_tbme_map(
     std::vector<unsigned short>& orb_3,
     std::vector<unsigned short>& j_couple,
     std::vector<double>& tbme_list,
-    std::vector<OrbitalParameters> model_space_orbitals
+    std::vector<OrbitalParameters> model_space_orbitals,
+    double tbme_mass_dependence_factor
 )
 {
     /*
@@ -38,7 +40,7 @@ void make_tbme_map(
 
         Key key = {i0, i1, i2, i3, j};
         tbme_keys.push_back(key);
-        tbme_map[key] = tbme;
+        tbme_map[key] = tbme*tbme_mass_dependence_factor;
 
         short sign_01 = std::pow(-1, (model_space_orbitals[i0].j + model_space_orbitals[i1].j)/2 - j + 1);
         short sign_23 = std::pow(-1, (model_space_orbitals[i2].j + model_space_orbitals[i3].j)/2 - j + 1);
@@ -51,50 +53,54 @@ void make_tbme_map(
         {
             Key key = {i1, i0, i2, i3, j};
             tbme_keys.push_back(key);
-            tbme_map[key] = tbme*sign_01;
+            tbme_map[key] = tbme*sign_01*tbme_mass_dependence_factor;
         }
         if (i2 != i3)
         {
             Key key = {i0, i1, i3, i2, j};
             tbme_keys.push_back(key);
-            tbme_map[key] = tbme*sign_23;
+            tbme_map[key] = tbme*sign_23*tbme_mass_dependence_factor;
         }
         if ((i0 != i1) and (i2 != i3))
         {
             Key key = {i1, i0, i3, i2, j};
             tbme_keys.push_back(key);
-            tbme_map[key] = tbme*sign_01*sign_23;
+            tbme_map[key] = tbme*sign_01*sign_23*tbme_mass_dependence_factor;
         }
         // if (i0, i1) != (i2, i3)
         if ((i0 != i2) or (i1 != i3))
         {
             Key key = {i2, i3, i0, i1, j};
             tbme_keys.push_back(key);
-            tbme_map[key] = tbme;
+            tbme_map[key] = tbme*tbme_mass_dependence_factor;
             if (i0 != i1)
             {
                 Key key = {i2, i3, i1, i0, j};
                 tbme_keys.push_back(key);
-                tbme_map[key] = tbme*sign_01;
+                tbme_map[key] = tbme*sign_01*tbme_mass_dependence_factor;
             }
             if (i2 != i3)
             {
                 Key key = {i3, i2, i0, i1, j};
                 tbme_keys.push_back(key);
-                tbme_map[key] = tbme*sign_23;
+                tbme_map[key] = tbme*sign_23*tbme_mass_dependence_factor;
             }
             if ((i0 != i1) and (i2 != i3))
             {
                 Key key = {i3, i2, i1, i0, j};
                 tbme_keys.push_back(key);
-                tbme_map[key] = tbme*sign_01*sign_23;
+                tbme_map[key] = tbme*sign_01*sign_23*tbme_mass_dependence_factor;
             }
         }
     }
     return;
 }
 
-const Interaction load_interaction(const std::string& interaction_filename)
+Interaction load_interaction(
+    const std::string& interaction_filename,
+    unsigned short n_valence_protons,
+    unsigned short n_valence_neutrons
+)
 {
     /*
     Load raw interaction data from the interaction file.
@@ -274,6 +280,32 @@ const Interaction load_interaction(const std::string& interaction_filename)
     }
     infile.close();
 
+    double tbme_mass_dependence_factor;
+    if (tbme_mass_dependence_method == 0)
+    {
+        /*
+        No mass dependence on the TBMEs
+        */
+        tbme_mass_dependence_factor = 1;
+    }
+    else if (tbme_mass_dependence_method == 1)
+    {
+        /*
+        The TBMEs need to be scaled according to mass dependence 1.
+        */
+        unsigned short nucleus_mass = n_core_neutrons + n_core_protons + n_valence_protons + n_valence_neutrons;
+        tbme_mass_dependence_factor = std::pow(nucleus_mass/tbme_mass_dependence_denominator, tbme_mass_dependence_exponent);
+    }
+    else
+    {
+        throw std::runtime_error(
+            "TBME mass dependence method '" +
+            std::to_string(tbme_mass_dependence_method) +
+            "' has not been implemented! " +
+            interaction_filename
+        );
+    }
+
     std::unordered_map<Key, double> tbme_map;
     std::vector<Key> tbme_keys;
     make_tbme_map(
@@ -285,14 +317,15 @@ const Interaction load_interaction(const std::string& interaction_filename)
         orb_3,
         j_couple,
         tbme,
-        model_space_orbitals
+        model_space_orbitals,
+        tbme_mass_dependence_factor
     );
 
     const ModelSpace model_space_protons(model_space_protons_orbitals);
     const ModelSpace model_space_neutrons(model_space_neutrons_orbitals);
     const ModelSpace model_space(model_space_orbitals);
 
-    const Interaction interaction(
+    Interaction interaction(
         tbme_mass_dependence_method,
         n_core_protons,
         n_core_neutrons,

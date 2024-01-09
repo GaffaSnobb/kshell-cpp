@@ -4,6 +4,6 @@
 #include <iostream>
 #include "data_structures.hpp"
 
-const Interaction load_interaction(const std::string& interaction_filename);
+Interaction load_interaction(const std::string& interaction_filename, unsigned short n_valence_protons, unsigned short n_valence_neutrons);
 
 #endif
