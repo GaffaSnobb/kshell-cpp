@@ -2,6 +2,7 @@
 #define DATA_STRUCTURES_HPP
 
 #include <vector>
+#include <unordered_map>
 
 struct Key
 {
@@ -52,12 +53,12 @@ struct OrbitalParameters
 struct ModelSpace
 {
     const std::vector<OrbitalParameters> orbitals;
-    // const unsigned short n_valence_nucleons;
+    const unsigned short n_valence_nucleons;
 
     ModelSpace(
-        std::vector<OrbitalParameters> orbitals_
-        // unsigned short n_valence_nucleons_
-    ) : orbitals(orbitals_) {}
+        std::vector<OrbitalParameters> orbitals_,
+        unsigned short n_valence_nucleons_
+    ) : orbitals(orbitals_), n_valence_nucleons(n_valence_nucleons_) {}
 
 };
 

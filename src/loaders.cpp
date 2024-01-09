@@ -321,9 +321,9 @@ Interaction load_interaction(
         tbme_mass_dependence_factor
     );
 
-    const ModelSpace model_space_protons(model_space_protons_orbitals);
-    const ModelSpace model_space_neutrons(model_space_neutrons_orbitals);
-    const ModelSpace model_space(model_space_orbitals);
+    const ModelSpace model_space_protons(model_space_protons_orbitals, n_valence_protons);
+    const ModelSpace model_space_neutrons(model_space_neutrons_orbitals, n_valence_neutrons);
+    const ModelSpace model_space(model_space_orbitals, n_valence_protons + n_valence_neutrons);
 
     Interaction interaction(
         tbme_mass_dependence_method,
