@@ -38,6 +38,7 @@ struct OrbitalParameters
     const unsigned short n;   // The "principal quantum number".
     const unsigned short l;   // Orbital angular momentum.
     const unsigned short j;   // Total angular momentum.
+    const unsigned short degeneracy;
     const short tz;           // Isospin.
     const std::vector<short> jz;  // All possible z projections of the total angular momentum vector.
 
@@ -45,9 +46,10 @@ struct OrbitalParameters
         unsigned short n_,
         unsigned short l_,
         unsigned short j_,
+        unsigned short degeneracy_,
         short tz_,
         std::vector<short> jz_
-    ) : n(n_), l(l_), j(j_), tz(tz_), jz(jz_) {}
+    ) : n(n_), l(l_), j(j_), degeneracy(degeneracy_), tz(tz_), jz(jz_) {}
 };
 
 struct ModelSpace

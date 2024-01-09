@@ -98,8 +98,8 @@ void make_tbme_map(
 
 Interaction load_interaction(
     const std::string& interaction_filename,
-    unsigned short n_valence_protons,
-    unsigned short n_valence_neutrons
+    const unsigned short n_valence_protons,
+    const unsigned short n_valence_neutrons
 )
 {
     /*
@@ -165,12 +165,13 @@ Interaction load_interaction(
         */
         std::getline(infile, line);
         std::istringstream iss(line);
-        unsigned short n_tmp, l_tmp, j_tmp;
+        unsigned short n_tmp, l_tmp, j_tmp, degeneracy_tmp;
         short tz_tmp;
         iss >> _ >> n_tmp >> l_tmp >> j_tmp >> tz_tmp;
+        degeneracy_tmp = 2*j_tmp + 1;
         std::vector<short> jz_tmp = range<short>(-j_tmp, j_tmp + 1, 2);
-        model_space_protons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, tz_tmp, jz_tmp);
-        model_space_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, tz_tmp, jz_tmp);
+        model_space_protons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
+        model_space_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
     }
 
     for (int i = 0; i < n_neutron_orbitals; i++)
@@ -188,12 +189,13 @@ Interaction load_interaction(
         */
         std::getline(infile, line);
         std::istringstream iss(line);
-        unsigned short n_tmp, l_tmp, j_tmp;
+        unsigned short n_tmp, l_tmp, j_tmp, degeneracy_tmp;
         short tz_tmp;
         iss >> _ >> n_tmp >> l_tmp >> j_tmp >> tz_tmp;
+        degeneracy_tmp = 2*j_tmp + 1;
         std::vector<short> jz_tmp = range<short>(-j_tmp, j_tmp + 1, 2);
-        model_space_neutrons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, tz_tmp, jz_tmp);
-        model_space_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, tz_tmp, jz_tmp);
+        model_space_neutrons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
+        model_space_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
     }
 
     while (std::getline(infile, line))
