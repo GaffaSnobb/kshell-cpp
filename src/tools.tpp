@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <type_traits>
 
 using std::cout;
 using std::endl;
@@ -30,23 +31,32 @@ void print(std::string name, T value)
     return;
 }
 
-template <typename T>
-std::vector<T> range(int start, int stop, int step) {
-    std::vector<T> range;
+template <typename T0, typename T1, typename T2, typename T3>
+std::vector<T0> range(T1 start, T2 stop, T3 step)
+{
+    static_assert(
+        std::is_integral<T1>::value and std::is_integral<T2>::value and std::is_integral<T3>::value,
+        "Start, stop, and step must be integral types."
+    );
+    std::vector<T0> range;
 
-    if (step == 0) {
+    if (step == 0)
+    {
         return range;
     }
-
-    if (step > 0) {
-        for (T i = start; i < stop; i += step) {
-            range.push_back(i);
-        }
-    } else {
-        for (T i = start; i > stop; i += step) {
+    if (step > 0)
+    {
+        for (T0 i = start; i < stop; i += step)
+        {
             range.push_back(i);
         }
     }
-
+    else
+    {
+        for (T0 i = start; i > stop; i += step)
+        {
+            range.push_back(i);
+        }
+    }
     return range;
 }
