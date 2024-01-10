@@ -7,6 +7,8 @@
 template <typename T>
 void print_vector(const std::vector<T>& vec);
 template <typename T>
+void print_vector(const std::vector<std::vector<T>>& nested_vector);
+template <typename T>
 void print_vector(std::string name, const std::vector<T>& vec);
 template <typename T>
 void print(std::string name, T value);
