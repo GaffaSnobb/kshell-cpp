@@ -55,12 +55,14 @@ struct OrbitalParameters
 struct ModelSpace
 {
     const std::vector<OrbitalParameters> orbitals;
+    const std::vector<short> all_jz_values;
     const unsigned short n_valence_nucleons;
 
     ModelSpace(
         std::vector<OrbitalParameters> orbitals_,
+        std::vector<short> all_jz_values_,
         unsigned short n_valence_nucleons_
-    ) : orbitals(orbitals_), n_valence_nucleons(n_valence_nucleons_) {}
+    ) : orbitals(orbitals_), all_jz_values(all_jz_values_), n_valence_nucleons(n_valence_nucleons_) {}
 
 };
 
