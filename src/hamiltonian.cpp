@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "data_structures.hpp"
 #include "tools.hpp"
+#include "basis.hpp"
 
 using std::cout;
 using std::endl;
@@ -151,5 +152,6 @@ void create_hamiltonian(const Interaction& interaction)
         M_target = 1;
     }
     const Indices indices = generate_indices(interaction);
+    calculate_m_basis_states(interaction, M_target);
     return;
 }
