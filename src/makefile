@@ -1,6 +1,6 @@
 CXX = clang++
 TARGET = run.out
-OBJS = loaders.o tools.o basic_solver.o
+OBJS = loaders.o tools.o basic_solver.o hamiltonian.o
 CXXFLAGS = -std=c++20
 
 # Build all
@@ -16,7 +16,10 @@ tools.o: tools.cpp tools.hpp
 loaders.o: loaders.cpp loaders.hpp tools.hpp data_structures.hpp
 	$(CXX) $(CXXFLAGS) -c loaders.cpp
 
-basic_solver.o: basic_solver.cpp loaders.hpp tools.hpp data_structures.hpp
+hamiltonian.o: hamiltonian.cpp hamiltonian.hpp data_structures.hpp
+	$(CXX) $(CXXFLAGS) -c hamiltonian.cpp
+
+basic_solver.o: basic_solver.cpp loaders.hpp tools.hpp data_structures.hpp hamiltonian.hpp
 	$(CXX) $(CXXFLAGS) -c basic_solver.cpp
 
 clean:
