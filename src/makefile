@@ -1,7 +1,9 @@
 CXX = clang++
 TARGET = run.out
-OBJS = loaders.o tools.o basic_solver.o hamiltonian.o basis.o
-CXXFLAGS = -std=c++20
+SRCS = tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp
+OBJS = $(SRCS:.cpp=.o)
+DEPS = $(OBJS:.o=.d)
+CXXFLAGS = -std=c++20 -MMD# -I../external/cppitertools
 
 # Build all
 all: $(TARGET)
@@ -10,20 +12,15 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
 
-tools.o: tools.cpp tools.hpp
-	$(CXX) $(CXXFLAGS) -c tools.cpp
+# Rule to generate object files from cpp files
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-loaders.o: loaders.cpp loaders.hpp tools.hpp data_structures.hpp
-	$(CXX) $(CXXFLAGS) -c loaders.cpp
+# Include the dependency files
+-include $(DEPS)
 
-hamiltonian.o: hamiltonian.cpp hamiltonian.hpp data_structures.hpp
-	$(CXX) $(CXXFLAGS) -c hamiltonian.cpp
-
-basis.o: basis.cpp basis.hpp data_structures.hpp
-	$(CXX) $(CXXFLAGS) -c basis.cpp
-
-basic_solver.o: basic_solver.cpp loaders.hpp tools.hpp data_structures.hpp hamiltonian.hpp
-	$(CXX) $(CXXFLAGS) -c basic_solver.cpp
-
+# Clean rule
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET) $(DEPS)
+
+.PHONY: all clean
