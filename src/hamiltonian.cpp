@@ -4,6 +4,7 @@
 #include "data_structures.hpp"
 #include "tools.hpp"
 #include "basis.hpp"
+#include "../external/eigen-3.4.0/Eigen/Dense"
 
 using std::cout;
 using std::endl;
@@ -134,24 +135,20 @@ const Indices generate_indices(const Interaction& interaction)
 
 void create_hamiltonian(const Interaction& interaction)
 {
-    unsigned short M_target;
-    if (interaction.model_space.n_valence_nucleons%2 == 0)
-    {
-        /*
-        For an even number of valence nucleons, the M = 0 basis states
-        are enough to describe all angular momenta.
-        */
-        M_target = 0;
-    }
-    else
-    {
-        /*
-        For odd-numbered M = 1/2 is enough, but remember, all angular
-        momenta in this code are multiplied by 2.
-        */
-        M_target = 1;
-    }
     const Indices indices = generate_indices(interaction);
-    calculate_m_basis_states(interaction, M_target);
+    const std::vector<std::vector<unsigned short>> basis_states = calculate_m_basis_states(interaction);
+    const unsigned int m_dim = basis_states.size();
+
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
+    H.resize(m_dim, m_dim);
+
+    for (int left_idx = 0; left_idx < m_dim; left_idx++)
+    {
+        for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
+        {
+            
+        }
+    }
+
     return;
 }
