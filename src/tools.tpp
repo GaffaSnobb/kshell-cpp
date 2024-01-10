@@ -12,6 +12,18 @@ void print_vector(const std::vector<T>& vec) {
     }
     cout << endl;
 }
+template <typename T>
+void print_vector(const std::vector<std::vector<T>>& nested_vector)
+{
+    for (const auto& inner_vector : nested_vector)
+    {
+        for (const auto& element : inner_vector)
+        {
+            std::cout << element << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 
 template <typename T>
 void print_vector(std::string name, const std::vector<T>& vec)
