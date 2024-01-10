@@ -106,6 +106,9 @@ Interaction load_interaction(
     Load raw interaction data from the interaction file.
     */
     std::vector<unsigned short> orb_0, orb_1, orb_2, orb_3, j_couple;
+    std::vector<short> all_jz_values_protons;
+    std::vector<short> all_jz_values_neutrons;
+    std::vector<short> all_jz_values;
     std::vector<double> tbme, spe;
 
     std::vector<OrbitalParameters> model_space_protons_orbitals;
@@ -168,8 +171,10 @@ Interaction load_interaction(
         unsigned short n_tmp, l_tmp, j_tmp, degeneracy_tmp;
         short tz_tmp;
         iss >> _ >> n_tmp >> l_tmp >> j_tmp >> tz_tmp;
-        degeneracy_tmp = 2*j_tmp + 1;
+        degeneracy_tmp = j_tmp + 1;
         std::vector<short> jz_tmp = range<short>(-j_tmp, j_tmp + 1, 2);
+        all_jz_values.insert(all_jz_values.end(), jz_tmp.begin(), jz_tmp.end());
+        all_jz_values_protons.insert(all_jz_values_protons.end(), jz_tmp.begin(), jz_tmp.end());
         model_space_protons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
         model_space_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
     }
@@ -192,8 +197,10 @@ Interaction load_interaction(
         unsigned short n_tmp, l_tmp, j_tmp, degeneracy_tmp;
         short tz_tmp;
         iss >> _ >> n_tmp >> l_tmp >> j_tmp >> tz_tmp;
-        degeneracy_tmp = 2*j_tmp + 1;
+        degeneracy_tmp = j_tmp + 1;
         std::vector<short> jz_tmp = range<short>(-j_tmp, j_tmp + 1, 2);
+        all_jz_values.insert(all_jz_values.end(), jz_tmp.begin(), jz_tmp.end());
+        all_jz_values_neutrons.insert(all_jz_values_neutrons.end(), jz_tmp.begin(), jz_tmp.end());
         model_space_neutrons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
         model_space_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
     }
@@ -323,9 +330,9 @@ Interaction load_interaction(
         tbme_mass_dependence_factor
     );
 
-    const ModelSpace model_space_protons(model_space_protons_orbitals, n_valence_protons);
-    const ModelSpace model_space_neutrons(model_space_neutrons_orbitals, n_valence_neutrons);
-    const ModelSpace model_space(model_space_orbitals, n_valence_protons + n_valence_neutrons);
+    const ModelSpace model_space_protons(model_space_protons_orbitals, all_jz_values_protons, n_valence_protons);
+    const ModelSpace model_space_neutrons(model_space_neutrons_orbitals, all_jz_values_neutrons, n_valence_neutrons);
+    const ModelSpace model_space(model_space_orbitals, all_jz_values, n_valence_protons + n_valence_neutrons);
 
     Interaction interaction(
         tbme_mass_dependence_method,
