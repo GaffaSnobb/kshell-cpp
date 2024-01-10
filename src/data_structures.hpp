@@ -33,6 +33,117 @@ namespace std
     };
 }
 
+
+struct Indices
+{
+    /*
+    Attributes
+    ----------
+    orbital_idx_to_m_idx_map : list[tuple[int, ...]]
+        Map the index of an orbital in a model space to the magnetic
+        substate indices of that orbital. How the orbitals are ordered
+        is defined by the interaction file (.snt). For example, in w.snt
+        the indices are as follows:
+
+            0 = p 0d_3/2
+            1 = p 0d_5/2
+            2 = p 1s_1/2
+            3 = n 0d_3/2
+            4 = n 0d_5/2
+            5 = n 1s_1/2
+
+        Please note that I have changed the indices to start at 0 while
+        in the actual interaction file the indices start at 1. This
+        means that orbital 0 (d3/2) has four magnetic substates and thus
+
+            orbital_idx_to_m_idx_map[0] = (0, 1, 2, 3)
+            orbital_idx_to_m_idx_map[1] = (0, 1, 2, 3, 4, 5)
+            orbital_idx_to_m_idx_map[2] = (0, 1)
+            ...
+
+    orbital_m_pair_to_composite_m_idx_map : dict[tuple[int, int], int]
+        Map a pair of (orbital index, m substate index) to a composite
+        m substate index. Please consider the following scheme sd model
+        space scheme:
+
+                          10    11        
+                        -  O  -  O  -             s1/2: 2
+                         -1/2   1/2
+
+               4     5     6     7     8     9    
+            -  O  -  O  -  O  -  O  -  O  -  O    d5/2: 1
+             -5/2  -3/2  -1/2   1/2   3/2   5/2
+
+                     0     1     2     3
+                  -  O  -  O  -  O  -  O  -       d3/2: 0
+                   -3/2  -1/2   1/2   3/2
+
+        The orbitals are indexed 0, 1, 2. The m substates are indexed by
+        a composite / cumulative / whatever you wanna call it, m
+        substate index, 0, 1, ..., 11. This map translates the orbital
+        index and the orbital's 'local' m substate index into the
+        composite m substate index. The 'local' m indices are for d3/2,
+        d5/2, s1/2 respectively,
+
+            [0, 1, 2, 3],
+            [0, 1, 2, 3, 4, 5],
+            [0, 1].
+
+        orbital_idx_to_j_map : list[int]
+            Map the index of an orbital to its 2*j value. Considering
+            the above scheme,
+
+                orbital_idx_to_j_map = [3, 5, 1]
+
+        m_composite_idx_to_m_map : list[int]
+            Map a composite m index to the 2*m value it corresponds to.
+            Considering the above scheme,
+
+                m_composite_idx_to_m_map = [
+                    -3, -1, +1, +3, -5, -3, -1, +1, +3, +5, -1, +1,
+                ]
+
+        orbital_idx_to_comp_m_idx_map : list[tuple[int, ...]]
+            Translate the orbital indices to the composite m indices of
+            the magnetic substates. For example, proton d3/2 has orbital
+            index 0 and composite m substate indices 0, 1, 2, 3.
+
+    */
+    const std::vector<short> composite_m_idx_to_m_map;
+    const std::vector<unsigned short> orbital_idx_to_j_map;
+    const std::vector<std::vector<unsigned short>> orbital_idx_to_composite_m_idx_map;
+    const std::vector<unsigned short> creation_orb_indices_0;
+    const std::vector<unsigned short> creation_orb_indices_1;
+    const std::vector<unsigned short> annihilation_orb_indices_0;
+    const std::vector<unsigned short> annihilation_orb_indices_1;
+    const std::vector<unsigned short> j_coupled;
+    const std::vector<short> m_coupled;
+    const std::vector<double> tbme;
+
+    Indices(
+        std::vector<short> composite_m_idx_to_m_map_,
+        std::vector<unsigned short> orbital_idx_to_j_map_,
+        std::vector<std::vector<unsigned short>> orbital_idx_to_composite_m_idx_map_,
+        std::vector<unsigned short> creation_orb_indices_0_,
+        std::vector<unsigned short> creation_orb_indices_1_,
+        std::vector<unsigned short> annihilation_orb_indices_0_,
+        std::vector<unsigned short> annihilation_orb_indices_1_,
+        std::vector<unsigned short> j_coupled_,
+        std::vector<short> m_coupled_,
+        std::vector<double> tbme_
+    ) :
+    composite_m_idx_to_m_map(composite_m_idx_to_m_map_),
+    orbital_idx_to_j_map(orbital_idx_to_j_map_),
+    orbital_idx_to_composite_m_idx_map(orbital_idx_to_composite_m_idx_map_),
+    creation_orb_indices_0(creation_orb_indices_0_),
+    creation_orb_indices_1(creation_orb_indices_1_),
+    annihilation_orb_indices_0(annihilation_orb_indices_0_),
+    annihilation_orb_indices_1(annihilation_orb_indices_1_),
+    j_coupled(j_coupled_),
+    m_coupled(m_coupled_),
+    tbme(tbme_) {}
+};
+
 struct OrbitalParameters
 {
     const unsigned short n;   // The "principal quantum number".
