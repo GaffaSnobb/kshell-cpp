@@ -19,10 +19,21 @@ void print_vector(const std::vector<std::vector<T>>& nested_vector)
     {
         for (const auto& element : inner_vector)
         {
-            std::cout << element << " ";
+            cout << element << " ";
         }
-        std::cout << std::endl;
+        cout << endl;
     }
+    // cout << "(";
+    // for (const auto& inner_vector : nested_vector)
+    // {
+    //     cout << "(";
+    //     for (const auto& element : inner_vector)
+    //     {
+    //         cout << element << ", ";
+    //     }
+    //     cout << "),";
+    // }
+    // cout << ")" << endl;
 }
 
 template <typename T>
