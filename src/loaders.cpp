@@ -330,10 +330,24 @@ Interaction load_interaction(
         tbme_mass_dependence_factor
     );
 
-    const ModelSpace model_space_protons(model_space_protons_orbitals, all_jz_values_protons, n_valence_protons);
-    const ModelSpace model_space_neutrons(model_space_neutrons_orbitals, all_jz_values_neutrons, n_valence_neutrons);
-    const ModelSpace model_space(model_space_orbitals, all_jz_values, n_valence_protons + n_valence_neutrons);
-
+    const ModelSpace model_space_protons(
+        model_space_protons_orbitals,
+        all_jz_values_protons,
+        n_valence_protons,
+        n_proton_orbitals
+    );
+    const ModelSpace model_space_neutrons(
+        model_space_neutrons_orbitals,
+        all_jz_values_neutrons,
+        n_valence_neutrons,
+        n_neutron_orbitals
+    );
+    const ModelSpace model_space(
+        model_space_orbitals,
+        all_jz_values,
+        n_valence_protons + n_valence_neutrons,
+        n_proton_orbitals + n_neutron_orbitals
+    );
     Interaction interaction(
         tbme_mass_dependence_method,
         n_core_protons,

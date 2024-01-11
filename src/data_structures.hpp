@@ -33,7 +33,6 @@ namespace std
     };
 }
 
-
 struct Indices
 {
     /*
@@ -168,13 +167,14 @@ struct ModelSpace
     const std::vector<OrbitalParameters> orbitals;
     const std::vector<short> all_jz_values;
     const unsigned short n_valence_nucleons;
+    const unsigned short n_orbitals;
 
     ModelSpace(
         std::vector<OrbitalParameters> orbitals_,
         std::vector<short> all_jz_values_,
-        unsigned short n_valence_nucleons_
-    ) : orbitals(orbitals_), all_jz_values(all_jz_values_), n_valence_nucleons(n_valence_nucleons_) {}
-
+        unsigned short n_valence_nucleons_,
+        unsigned short n_orbitals_
+    ) : orbitals(orbitals_), all_jz_values(all_jz_values_), n_valence_nucleons(n_valence_nucleons_), n_orbitals(n_orbitals_) {}
 };
 
 struct Interaction
