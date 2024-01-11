@@ -70,6 +70,7 @@ std::vector<std::vector<unsigned short>> calculate_m_basis_states(const Interact
     std::vector<unsigned short> proton_indices = range<unsigned short>( // All possible proton m substate indices.
         0, n_proton_m_substates, 1
     );
+
     auto proton_index_combinations = iter::combinations(
         proton_indices, // Iterable.
         interaction.model_space_protons.n_valence_nucleons  // Number of elements to choose from the iterable.
@@ -78,23 +79,23 @@ std::vector<std::vector<unsigned short>> calculate_m_basis_states(const Interact
     std::vector<unsigned short> neutron_indices = range<unsigned short>(    // All possible neutron m substate indices.
         n_proton_m_substates, n_proton_m_substates + n_neutron_m_substates, 1
     );
+
     auto neutron_index_combinations = iter::combinations(
         neutron_indices,
         interaction.model_space_neutrons.n_valence_nucleons
     );
 
-    
-    for (auto&& proton_combination : proton_index_combinations)
+    if (interaction.model_space_protons.n_valence_nucleons == 0)
     {
+        /*
+        There are no valence protons thus the combined indices are the
+        same as the neutron indices.
+        */
         for (auto&& neutron_combination : neutron_index_combinations)
         {   
             std::vector<unsigned short> combined_index_combinations;
             short M = 0;    // For summing the m value of each nucleon.
-            for (unsigned short p : proton_combination)
-            {
-                combined_index_combinations.push_back(p);
-                M += interaction.model_space.all_jz_values[p];
-            }
+
             for (unsigned short n : neutron_combination)
             {
                 combined_index_combinations.push_back(n);
@@ -108,6 +109,66 @@ std::vector<std::vector<unsigned short>> calculate_m_basis_states(const Interact
                 target M value.
                 */
                 basis_states.push_back(combined_index_combinations);
+            }
+        }
+    }
+    else if (interaction.model_space_neutrons.n_valence_nucleons == 0)
+    {
+        /*
+        There are no valence neutrons thus the combined indices are the
+        same as the proton indices.
+        */
+        for (auto&& proton_combination : proton_index_combinations)
+        {   
+            std::vector<unsigned short> combined_index_combinations;
+            short M = 0;    // For summing the m value of each nucleon.
+
+            for (unsigned short n : proton_combination)
+            {
+                combined_index_combinations.push_back(n);
+                M += interaction.model_space.all_jz_values[n];
+            }
+            if (M == M_target)
+            {
+                /*
+                Keep the combination only if the sum of the m values of
+                all the nucleons in the combination is equal to the
+                target M value.
+                */
+                basis_states.push_back(combined_index_combinations);
+            }
+        }
+    }
+    else
+    {
+        /*
+        For every proton combination, add every neutron combination.
+        */
+        for (auto&& proton_combination : proton_index_combinations)
+        {
+            for (auto&& neutron_combination : neutron_index_combinations)
+            {   
+                std::vector<unsigned short> combined_index_combinations;
+                short M = 0;    // For summing the m value of each nucleon.
+                for (unsigned short p : proton_combination)
+                {
+                    combined_index_combinations.push_back(p);
+                    M += interaction.model_space.all_jz_values[p];
+                }
+                for (unsigned short n : neutron_combination)
+                {
+                    combined_index_combinations.push_back(n);
+                    M += interaction.model_space.all_jz_values[n];
+                }
+                if (M == M_target)
+                {
+                    /*
+                    Keep the combination only if the sum of the m values of
+                    all the nucleons in the combination is equal to the
+                    target M value.
+                    */
+                    basis_states.push_back(combined_index_combinations);
+                }
             }
         }
     }
