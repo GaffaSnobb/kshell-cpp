@@ -17,6 +17,19 @@ struct Key5
     }
 };
 
+struct Key6
+{
+    /*
+    Custom struct to be used as a key in a std::unordered_map.
+    */
+    unsigned short a, b, c, d, e, f;
+
+    bool operator==(const Key6& other) const
+    {
+        return a == other.a && b == other.b && c == other.c && d == other.d && e == other.e && f == other.f;
+    }
+};
+
 namespace std
 {
     template <>
@@ -24,11 +37,25 @@ namespace std
     {
         std::size_t operator()(const Key5& k) const
         {   // Compute individual hash values for two data members and combine them using XOR and bit shifting
-            return ((std::hash<unsigned short>()(k.a) 
-                 ^ (std::hash<unsigned short>()(k.b) << 1)) >> 1)
-                 ^ (std::hash<unsigned short>()(k.c) 
-                 ^ (std::hash<unsigned short>()(k.d) << 1))
-                 ^ (std::hash<unsigned short>()(k.e) << 1);
+            return ((std::hash<unsigned short>()(k.a)
+                ^ (std::hash<unsigned short>()(k.b) << 1)) >> 1)
+                ^ (std::hash<unsigned short>()(k.c)
+                ^ (std::hash<unsigned short>()(k.d) << 1))
+                ^ (std::hash<unsigned short>()(k.e) << 1);
+        }
+    };
+
+    template <>
+    struct hash<Key6>
+    {
+        std::size_t operator()(const Key6& k) const
+        {
+            return ((std::hash<unsigned short>()(k.a)
+                ^ (std::hash<unsigned short>()(k.b) << 1)) >> 1)
+                ^ (std::hash<unsigned short>()(k.c)
+                ^ (std::hash<unsigned short>()(k.d) << 1))
+                ^ (std::hash<unsigned short>()(k.e)
+                ^ (std::hash<unsigned short>()(k.f) << 1));
         }
     };
 }
