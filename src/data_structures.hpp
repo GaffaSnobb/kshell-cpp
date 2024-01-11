@@ -48,14 +48,19 @@ namespace std
     template <>
     struct hash<Key6>
     {
-        std::size_t operator()(const Key6& k) const
+        size_t operator()(const Key6& k) const
         {
-            return ((std::hash<short>()(k.a)
-                ^ (std::hash<short>()(k.b) << 1)) >> 1)
-                ^ (std::hash<short>()(k.c)
-                ^ (std::hash<short>()(k.d) << 1))
-                ^ (std::hash<short>()(k.e)
-                ^ (std::hash<short>()(k.f) << 1));
+            // Combine hash values for each field
+            size_t h1 = std::hash<short>()(k.a);
+            size_t h2 = std::hash<short>()(k.b);
+            size_t h3 = std::hash<short>()(k.c);
+            size_t h4 = std::hash<short>()(k.d);
+            size_t h5 = std::hash<short>()(k.e);
+            size_t h6 = std::hash<short>()(k.f);
+
+            // Combine these hashes together
+            return ((((h1 ^ (h2 << 1)) >> 1) ^ (h3 << 1)) >> 1) ^
+                   ((((h4 ^ (h5 << 1)) >> 1) ^ (h6 << 1)) >> 1);
         }
     };
 }
