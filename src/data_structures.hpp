@@ -22,7 +22,7 @@ struct Key6
     /*
     Custom struct to be used as a key in a std::unordered_map.
     */
-    unsigned short a, b, c, d, e, f;
+    short a, b, c, d, e, f;
 
     bool operator==(const Key6& other) const
     {
@@ -50,12 +50,12 @@ namespace std
     {
         std::size_t operator()(const Key6& k) const
         {
-            return ((std::hash<unsigned short>()(k.a)
-                ^ (std::hash<unsigned short>()(k.b) << 1)) >> 1)
-                ^ (std::hash<unsigned short>()(k.c)
-                ^ (std::hash<unsigned short>()(k.d) << 1))
-                ^ (std::hash<unsigned short>()(k.e)
-                ^ (std::hash<unsigned short>()(k.f) << 1));
+            return ((std::hash<short>()(k.a)
+                ^ (std::hash<short>()(k.b) << 1)) >> 1)
+                ^ (std::hash<short>()(k.c)
+                ^ (std::hash<short>()(k.d) << 1))
+                ^ (std::hash<short>()(k.e)
+                ^ (std::hash<short>()(k.f) << 1));
         }
     };
 }
