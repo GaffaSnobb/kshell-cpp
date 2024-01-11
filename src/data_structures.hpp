@@ -20,9 +20,15 @@ struct Key5
 struct Key6
 {
     /*
-    Custom struct to be used as a key in a std::unordered_map.
+    Custom struct to be used as a key in a std::unordered_map for the
+    Clebsh-Gordan coefficients.
     */
-    short a, b, c, d, e, f;
+    unsigned short a;
+    short b;
+    unsigned short c;
+    short d;
+    unsigned short e;
+    short f;
 
     bool operator==(const Key6& other) const
     {
@@ -49,18 +55,17 @@ namespace std
     struct hash<Key6>
     {
         size_t operator()(const Key6& k) const
-        {
-            // Combine hash values for each field
-            size_t h1 = std::hash<short>()(k.a);
-            size_t h2 = std::hash<short>()(k.b);
-            size_t h3 = std::hash<short>()(k.c);
-            size_t h4 = std::hash<short>()(k.d);
-            size_t h5 = std::hash<short>()(k.e);
-            size_t h6 = std::hash<short>()(k.f);
+        {   // Hash individual members and combine them
+            size_t hash_a = std::hash<unsigned short>()(k.a);
+            size_t hash_b = std::hash<short>()(k.b);
+            size_t hash_c = std::hash<unsigned short>()(k.c);
+            size_t hash_d = std::hash<short>()(k.d);
+            size_t hash_e = std::hash<unsigned short>()(k.e);
+            size_t hash_f = std::hash<short>()(k.f);
 
             // Combine these hashes together
-            return ((((h1 ^ (h2 << 1)) >> 1) ^ (h3 << 1)) >> 1) ^
-                   ((((h4 ^ (h5 << 1)) >> 1) ^ (h6 << 1)) >> 1);
+            return ((((hash_a ^ (hash_b << 1)) >> 1) ^ (hash_c << 1)) >> 1) ^
+                   ((((hash_d ^ (hash_e << 1)) >> 1) ^ (hash_f << 1)) >> 1);
         }
     };
 }
