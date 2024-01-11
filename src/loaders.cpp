@@ -10,8 +10,8 @@ using std::cout;
 using std::endl;
 
 void make_tbme_map(
-    std::unordered_map<Key, double>& tbme_map,
-    std::vector<Key>& tbme_keys,
+    std::unordered_map<Key5, double>& tbme_map,
+    std::vector<Key5>& tbme_keys,
     std::vector<unsigned short>& orb_0,
     std::vector<unsigned short>& orb_1,
     std::vector<unsigned short>& orb_2,
@@ -38,7 +38,7 @@ void make_tbme_map(
         unsigned short j = j_couple[i];
         double tbme = tbme_list[i];
 
-        Key key = {i0, i1, i2, i3, j};
+        Key5 key = {i0, i1, i2, i3, j};
         tbme_keys.push_back(key);
         tbme_map[key] = tbme*tbme_mass_dependence_factor;
 
@@ -51,43 +51,43 @@ void make_tbme_map(
         */
         if (i0 != i1)
         {
-            Key key = {i1, i0, i2, i3, j};
+            Key5 key = {i1, i0, i2, i3, j};
             tbme_keys.push_back(key);
             tbme_map[key] = tbme*sign_01*tbme_mass_dependence_factor;
         }
         if (i2 != i3)
         {
-            Key key = {i0, i1, i3, i2, j};
+            Key5 key = {i0, i1, i3, i2, j};
             tbme_keys.push_back(key);
             tbme_map[key] = tbme*sign_23*tbme_mass_dependence_factor;
         }
         if ((i0 != i1) and (i2 != i3))
         {
-            Key key = {i1, i0, i3, i2, j};
+            Key5 key = {i1, i0, i3, i2, j};
             tbme_keys.push_back(key);
             tbme_map[key] = tbme*sign_01*sign_23*tbme_mass_dependence_factor;
         }
         // if (i0, i1) != (i2, i3)
         if ((i0 != i2) or (i1 != i3))
         {
-            Key key = {i2, i3, i0, i1, j};
+            Key5 key = {i2, i3, i0, i1, j};
             tbme_keys.push_back(key);
             tbme_map[key] = tbme*tbme_mass_dependence_factor;
             if (i0 != i1)
             {
-                Key key = {i2, i3, i1, i0, j};
+                Key5 key = {i2, i3, i1, i0, j};
                 tbme_keys.push_back(key);
                 tbme_map[key] = tbme*sign_01*tbme_mass_dependence_factor;
             }
             if (i2 != i3)
             {
-                Key key = {i3, i2, i0, i1, j};
+                Key5 key = {i3, i2, i0, i1, j};
                 tbme_keys.push_back(key);
                 tbme_map[key] = tbme*sign_23*tbme_mass_dependence_factor;
             }
             if ((i0 != i1) and (i2 != i3))
             {
-                Key key = {i3, i2, i1, i0, j};
+                Key5 key = {i3, i2, i1, i0, j};
                 tbme_keys.push_back(key);
                 tbme_map[key] = tbme*sign_01*sign_23*tbme_mass_dependence_factor;
             }
@@ -315,8 +315,8 @@ Interaction load_interaction(
         );
     }
 
-    std::unordered_map<Key, double> tbme_map;
-    std::vector<Key> tbme_keys;
+    std::unordered_map<Key5, double> tbme_map;
+    std::vector<Key5> tbme_keys;
     make_tbme_map(
         tbme_map,
         tbme_keys,

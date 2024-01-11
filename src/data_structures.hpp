@@ -4,14 +4,14 @@
 #include <vector>
 #include <unordered_map>
 
-struct Key
+struct Key5
 {
     /*
     Custom struct to be used as a key in a std::unordered_map.
     */
     unsigned short a, b, c, d, e;
 
-    bool operator==(const Key& other) const
+    bool operator==(const Key5& other) const
     {
         return a == other.a && b == other.b && c == other.c && d == other.d && e == other.e;
     }
@@ -20,9 +20,9 @@ struct Key
 namespace std
 {
     template <>
-    struct hash<Key>
+    struct hash<Key5>
     {
-        std::size_t operator()(const Key& k) const
+        std::size_t operator()(const Key5& k) const
         {   // Compute individual hash values for two data members and combine them using XOR and bit shifting
             return ((std::hash<unsigned short>()(k.a) 
                  ^ (std::hash<unsigned short>()(k.b) << 1)) >> 1)
@@ -189,8 +189,8 @@ struct Interaction
     const ModelSpace model_space;
     const ModelSpace model_space_protons;
     const ModelSpace model_space_neutrons;
-    const std::unordered_map<Key, double> tbme_map;
-    const std::vector<Key> tbme_keys;
+    const std::unordered_map<Key5, double> tbme_map;
+    const std::vector<Key5> tbme_keys;
 
     Interaction(
         unsigned short tbme_mass_dependence_method_,
@@ -203,8 +203,8 @@ struct Interaction
         ModelSpace model_space_,
         ModelSpace model_space_protons_,
         ModelSpace model_space_neutrons_,
-        std::unordered_map<Key, double> tbme_map_,
-        std::vector<Key> tbme_keys_
+        std::unordered_map<Key5, double> tbme_map_,
+        std::vector<Key5> tbme_keys_
     ) :
     tbme_mass_dependence_method(tbme_mass_dependence_method_),
     n_core_protons(n_core_protons_),
