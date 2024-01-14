@@ -4,6 +4,7 @@
 #include <vector>
 #include "data_structures.hpp"
 
+void print_vector(const std::vector<Key5>& vec);
 template <typename T>
 void print_vector(const std::vector<T>& vec);
 template <typename T>
