@@ -19,6 +19,14 @@ void print(std::vector<OrbitalParameters> orbitals)
     }
 }
 
+void print_vector(const std::vector<Key5>& vec)
+{
+    for (Key5 elem : vec)
+    {
+        cout << "{" << elem.a << ", " << elem.b << ", " << elem.c << ", " << elem.d << ", " << elem.e << "}," << endl;
+    }
+}
+
 short index(const std::vector<unsigned short>& vec, const unsigned short value)
 {
     /*
