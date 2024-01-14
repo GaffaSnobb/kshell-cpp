@@ -50,6 +50,43 @@ namespace std
                 ^ (std::hash<unsigned short>()(k.e) << 1);
         }
     };
+    // template<>
+    // struct hash<Key5>
+    // {
+    //     std::size_t operator()(const Key5& k) const
+    //     {
+    //         std::size_t h1 = std::hash<unsigned short>()(k.a);
+    //         std::size_t h2 = std::hash<unsigned short>()(k.b);
+    //         std::size_t h3 = std::hash<unsigned short>()(k.c);
+    //         std::size_t h4 = std::hash<unsigned short>()(k.d);
+    //         std::size_t h5 = std::hash<unsigned short>()(k.e);
+
+    //         // Combine hash values
+    //         return ((((h1 ^ (h2 << 1)) >> 1) ^ (h3 << 1)) >> 1) ^ ((h4 ^ (h5 << 1)) << 1);
+    //     }
+    // };
+
+    // template<>
+    // struct hash<Key5>
+    // {
+    //     std::size_t operator()(const Key5& k) const
+    //     {
+    //         std::size_t seed = 0;
+    //         auto hash_combine = [&seed](std::size_t h)
+    //         {
+    //             h ^= seed + 0x9e3779b9 + (h << 6) + (h >> 2);
+    //             seed ^= h;
+    //         };
+
+    //         hash_combine(std::hash<unsigned short>()(k.a));
+    //         hash_combine(std::hash<unsigned short>()(k.b));
+    //         hash_combine(std::hash<unsigned short>()(k.c));
+    //         hash_combine(std::hash<unsigned short>()(k.d));
+    //         hash_combine(std::hash<unsigned short>()(k.e));
+
+    //         return seed;
+    //     }
+    // };
 
     template <>
     struct hash<Key6>
