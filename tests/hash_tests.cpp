@@ -3150,14 +3150,18 @@ void test_hash_collisions_Key6()
 
     std::unordered_map<Key6, double> CG_map;
     unsigned short counter = 0;
+    bool success = true;
 
     for (const Key6 key : CG_keys)
     {   
-        bool success = CG_map.insert({key, 99.9}).second;
-        if (!success) std::cerr << "Collision detected for hash test no. " << counter << "." << std::endl;
+        if (!CG_map.insert({key, 99.9}).second)
+        {
+            std::cerr << "Collision detected for hash test no. " << counter << "." << std::endl;
+            success = false;
+        }
         counter++;
     }
-    std::cout << "No collisions detected." << std::endl;
+    if (success) std::cout << "No collisions detected." << std::endl;
 }
 
 int main()
