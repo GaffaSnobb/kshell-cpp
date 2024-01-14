@@ -40,7 +40,8 @@ void make_tbme_map(
 
         Key5 key = {i0, i1, i2, i3, j};
         tbme_keys.push_back(key);
-        tbme_map[key] = tbme*tbme_mass_dependence_factor;
+        bool success = tbme_map.insert({key, tbme*tbme_mass_dependence_factor}).second;
+        if (!success) throw std::runtime_error("Hash collision detected");
 
         short sign_01 = std::pow(-1, (model_space_orbitals[i0].j + model_space_orbitals[i1].j)/2 - j + 1);
         short sign_23 = std::pow(-1, (model_space_orbitals[i2].j + model_space_orbitals[i3].j)/2 - j + 1);
@@ -53,43 +54,50 @@ void make_tbme_map(
         {
             Key5 key = {i1, i0, i2, i3, j};
             tbme_keys.push_back(key);
-            tbme_map[key] = tbme*sign_01*tbme_mass_dependence_factor;
+            bool success = tbme_map.insert({key, tbme*sign_01*tbme_mass_dependence_factor}).second;
+            if (!success) throw std::runtime_error("Hash collision detected");
         }
         if (i2 != i3)
         {
             Key5 key = {i0, i1, i3, i2, j};
             tbme_keys.push_back(key);
-            tbme_map[key] = tbme*sign_23*tbme_mass_dependence_factor;
+            bool success = tbme_map.insert({key, tbme*sign_23*tbme_mass_dependence_factor}).second;
+            if (!success) throw std::runtime_error("Hash collision detected");
         }
         if ((i0 != i1) and (i2 != i3))
         {
             Key5 key = {i1, i0, i3, i2, j};
             tbme_keys.push_back(key);
-            tbme_map[key] = tbme*sign_01*sign_23*tbme_mass_dependence_factor;
+            bool success = tbme_map.insert({key, tbme*sign_01*sign_23*tbme_mass_dependence_factor}).second;
+            if (!success) throw std::runtime_error("Hash collision detected");
         }
         // if (i0, i1) != (i2, i3)
         if ((i0 != i2) or (i1 != i3))
         {
             Key5 key = {i2, i3, i0, i1, j};
             tbme_keys.push_back(key);
-            tbme_map[key] = tbme*tbme_mass_dependence_factor;
+            bool success = tbme_map.insert({key, tbme*tbme_mass_dependence_factor}).second;
+            if (!success) throw std::runtime_error("Hash collision detected");
             if (i0 != i1)
             {
                 Key5 key = {i2, i3, i1, i0, j};
                 tbme_keys.push_back(key);
-                tbme_map[key] = tbme*sign_01*tbme_mass_dependence_factor;
+                bool success = tbme_map.insert({key, tbme*sign_01*tbme_mass_dependence_factor}).second;
+                if (!success) throw std::runtime_error("Hash collision detected");
             }
             if (i2 != i3)
             {
                 Key5 key = {i3, i2, i0, i1, j};
                 tbme_keys.push_back(key);
-                tbme_map[key] = tbme*sign_23*tbme_mass_dependence_factor;
+                bool success = tbme_map.insert({key, tbme*sign_23*tbme_mass_dependence_factor}).second;
+                if (!success) throw std::runtime_error("Hash collision detected");
             }
             if ((i0 != i1) and (i2 != i3))
             {
                 Key5 key = {i3, i2, i1, i0, j};
                 tbme_keys.push_back(key);
-                tbme_map[key] = tbme*sign_01*sign_23*tbme_mass_dependence_factor;
+                bool success = tbme_map.insert({key, tbme*sign_01*sign_23*tbme_mass_dependence_factor}).second;
+                if (!success) throw std::runtime_error("Hash collision detected");
             }
         }
     }
