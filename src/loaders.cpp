@@ -28,7 +28,8 @@ void make_tbme_map(
     numbers in each key represent the orbitals which are interacting and
     the fifth number is the total angular momentum (j) they couple to.
     The value of the unordered map is the corresponding TBME.
-    */    
+    */
+    auto start = timer();
     for (int i = 0; i < tbme_list.size(); i++)
     {   
         unsigned short i0 = orb_0[i];
@@ -101,6 +102,7 @@ void make_tbme_map(
             }
         }
     }
+    timer(start, "make_tbme_map");
     return;
 }
 
@@ -113,6 +115,7 @@ Interaction load_interaction(
     /*
     Load raw interaction data from the interaction file.
     */
+    auto start = timer();
     std::vector<unsigned short> orb_0, orb_1, orb_2, orb_3, j_couple;
     std::vector<short> all_jz_values_protons;
     std::vector<short> all_jz_values_neutrons;
@@ -323,6 +326,7 @@ Interaction load_interaction(
         );
     }
 
+    timer(start, "load_interaction");
     std::unordered_map<Key5, double> tbme_map;
     std::vector<Key5> tbme_keys;
     make_tbme_map(
