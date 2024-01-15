@@ -2,6 +2,7 @@
 #define TOOLS_HPP
 
 #include <vector>
+#include <chrono>
 #include "data_structures.hpp"
 
 void print_vector(const std::vector<Key5>& vec);
@@ -28,6 +29,25 @@ inline short negative_one_pow(short exponent)   // Dont really know if the compi
     significant bit of `exponent` to determine if `exponent` is odd or
     even.
 
+    NOTE: std::pow is practically identically fast as the bit-check and
+    modulo solutions with -O0 and -O1. There is however a slight
+    advantage at -O2 and higher:
+
+    np.mean(pow_O0)/1000, np.mean(bit_O0)/1000, np.mean(modulo_O0)/1000
+    (19.54375, 19.70725, 19.9485)
+
+    np.mean(pow_O1)/1000, np.mean(bit_O1)/1000, np.mean(modulo_O1)/1000
+    (1.49025, 1.48375, 1.4715)
+
+    np.mean(pow_O2)/1000, np.mean(bit_O2)/1000, np.mean(modulo_O2)/1000
+    (1.50675, 1.461, 1.4745)
+
+    np.mean(pow_O3)/1000, np.mean(bit_O3)/1000, np.mean(modulo_O3)/1000
+    (1.50575, 1.4795, 1.4725)
+
+    np.mean(pow_Ofast)/1000, np.mean(bit_Ofast)/1000, np.mean(modulo_Ofast)/1000
+    (1.542, 1.4765, 1.475)
+
     Parameters
     ----------
     exponent : unsigned short
@@ -36,14 +56,19 @@ inline short negative_one_pow(short exponent)   // Dont really know if the compi
 
     Returns
     -------
-    int
+    short
         The result of raising -1 to the power of `exponent`. Returns 1
         if `exponent` is even, and -1 if `exponent` is odd.
     */
+    // return std::pow(-1, exponent);
     return (exponent & 1) ? -1 : 1;
+    // return (exponent % 2 == 0) ? 1 : -1;
 }
 
 short check_existence_and_bisect(const std::vector<unsigned short>& vec, const unsigned short value);
+
+std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolution_clock> start, std::string name);
+std::chrono::time_point<std::chrono::high_resolution_clock> timer();
 
 #include "tools.tpp"
 
