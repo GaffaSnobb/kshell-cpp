@@ -130,9 +130,9 @@ Interaction load_interaction(
     std::string line;
     unsigned int n_tbme;    // gs8.snt has over 10k TBMEs. short is enough for this, but other interactions might have even more.
     unsigned short tbme_mass_dependence_method;
-    unsigned short n_proton_orbitals;
-    unsigned short n_neutron_orbitals;
-    unsigned short n_spe;
+    unsigned short n_proton_orbitals = 0;
+    unsigned short n_neutron_orbitals = 0;
+    unsigned short n_spe = 0;
     unsigned short n_core_neutrons;
     unsigned short n_core_protons;
     double tbme_mass_dependence_exponent;
