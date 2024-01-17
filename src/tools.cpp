@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <bitset>
+#include "parameters.hpp"
 #include "tools.hpp"
 #include "data_structures.hpp"
 
@@ -9,6 +11,15 @@ using std::endl;
 // using std::chrono::high_resolution_clock;
 // using std::chrono::duration_cast;
 // using std::chrono::milliseconds;
+
+// void print_bit_representation(unsigned short state)
+// {
+//     cout << "value: " << state << endl;
+//     std::bitset<16> bits(state);
+//     cout << "bits: ";
+//     for (int i = 15; i >= 0; --i) cout << bits[i] << " ";
+//     cout << endl;
+// }
 
 void print(std::vector<OrbitalParameters> orbitals)
 {
@@ -20,6 +31,25 @@ void print(std::vector<OrbitalParameters> orbitals)
         print("tz", orb.tz);
         print_vector("jz", orb.jz);
         cout << endl;
+    }
+}
+
+void print_vector(const std::vector<std::bitset<n_bits_bitset>>& vec)
+{
+    for (const std::bitset<n_bits_bitset> val : vec)
+    {
+        bool first_value = true;
+        cout << val << ": [";
+        for (int i = 0; i < n_bits_bitset; i++)
+        {
+            if (val.test(i))
+            {
+                if (not first_value) cout << ", ";
+                cout << i;
+                first_value = false;
+            }
+        }
+        cout << "]" << endl;
     }
 }
 

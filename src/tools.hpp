@@ -3,8 +3,11 @@
 
 #include <vector>
 #include <chrono>
+#include <bitset>
+#include "parameters.hpp"
 #include "data_structures.hpp"
 
+void print_vector(const std::vector<std::bitset<n_bits_bitset>>& vec);
 void print_vector(const std::vector<Key5>& vec);
 template <typename T>
 void print_vector(const std::vector<T>& vec);
