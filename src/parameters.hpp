@@ -3,6 +3,8 @@
 
 #include "data_structures.hpp"
 
+constexpr unsigned short n_bits_bitset = 24;    // Has to be equal to or larger than the number of m-substates in the model space.
+
 const std::unordered_map<Key6, double> clebsch_gordan = {
     {{ 3, -3,  3, -3,  0,  0}, 0.0},
     {{ 3, -3,  3, -1,  0,  0}, 0.0},
