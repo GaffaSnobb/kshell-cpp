@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <chrono>
+#include <bitset>
 #include "data_structures.hpp"
 #include "tools.hpp"
 #include "basis.hpp"
@@ -159,6 +160,131 @@ const Indices generate_indices(const Interaction& interaction)
     );
     timer(start, "generate_indices");
     return indices;
+}
+
+double calculate_onebody_matrix_element_bit_representation(
+    const Interaction& interaction,
+    const Indices& indices,
+    const std::bitset<n_bits_bitset>& left_state,
+    const std::bitset<n_bits_bitset>& right_state
+)
+{
+    double onebody_res = 0;
+
+    for (unsigned short creation_orb_idx = 0; creation_orb_idx < interaction.model_space.n_orbitals; creation_orb_idx++)
+    {
+        /*
+        More generally, there should also be a loop over the same values
+        for annihilation_idx, but the SPEs for most, if not all of the
+        interaction files, are only defined for when the two indices are
+        the same.
+        */
+        unsigned short annihilation_orb_idx = creation_orb_idx;
+    
+        for (unsigned short creation_comp_m_idx : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx])
+        {
+            for (unsigned short annihilation_comp_m_idx : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx])
+            {
+                /*
+                Index scheme for the sd model space:
+
+                              22    23        
+                            -  O  -  O  -             neutron s1/2: 5
+                             -1/2   1/2
+
+                  16    17    18    19    20    21    
+                -  O  -  O  -  O  -  O  -  O  -  O    neutron d5/2: 4
+                 -5/2  -3/2  -1/2   1/2   3/2   5/2
+
+                        12    13    14    15
+                      -  O  -  O  -  O  -  O  -       neutron d3/2: 3
+                       -3/2  -1/2   1/2   3/2
+
+                              10    11        
+                            -  O  -  O  -             proton s1/2: 2
+                             -1/2   1/2
+
+                   4     5     6     7     8     9    
+                -  O  -  O  -  O  -  O  -  O  -  O    proton d5/2: 1
+                 -5/2  -3/2  -1/2   1/2   3/2   5/2
+
+                         0     1     2     3
+                      -  O  -  O  -  O  -  O  -       proton d3/2: 0
+                       -3/2  -1/2   1/2   3/2
+
+                orbital_idx_to_composite_m_idx_map translates the orbital
+                indices to the composite m indices of the magnetic
+                substates. For example, proton d3/2 has orbital index 0
+                and composite m substate indices 0, 1, 2, 3.
+                */
+                std::bitset<n_bits_bitset> new_right_state = right_state;   // The contents of right_state is copied, not referenced.
+
+                // short annihalated_substate_idx = index(new_right_state, annihilation_comp_m_idx);
+                // if (annihalated_substate_idx == -1)
+                if (not new_right_state.test(annihilation_comp_m_idx))
+                {
+                    /*
+                    If the index cannot be found, then it does not exist
+                    in the list. Aka. we are trying to annihilate a
+                    substate which is un-occupied and the result is
+                    zero.
+
+                    We need the index of the substate which will be
+                    annihalated because there might be a phase of -1.
+                    This is because we have to make sure that the
+                    annihilation operator is placed next to the creation
+                    operator it tries to annihilate:
+
+                        c_0 | (0, 3) > = c_0 c_0^\dagger c_3^\dagger | core >
+                                       = c_3^\dagger | core >
+                                       = | (3) >
+
+                        c_0 | (3, 0) > = c_0 c_3^\dagger c_0^\dagger | core >
+                                       = - c_0 c_0^\dagger c_3^\dagger | core >
+                                       = - c_3^\dagger | core >
+                                       = - | (3) >
+
+                    */
+                    continue;
+                }
+
+                unsigned short annihalated_substate_idx = unset_bit_and_count(new_right_state, annihilation_comp_m_idx);
+                short annihilation_sign = negative_one_pow(annihalated_substate_idx);
+                
+                // new_right_state.erase(new_right_state.begin() + annihalated_substate_idx);
+                // short created_substate_idx = check_existence_and_bisect(new_right_state, creation_comp_m_idx);
+
+                // if (created_substate_idx == -1)
+                if (new_right_state.test(creation_comp_m_idx))
+                {
+                    /*
+                    `creation_comp_m_idx` already exists in
+                    `new_right_state`. Creating a state which already
+                    exists yields 0.
+                    */
+                    continue;
+                }
+
+                short created_substate_idx = set_bit_and_count(new_right_state, creation_comp_m_idx);
+                // new_right_state.insert(new_right_state.begin() + created_substate_idx, creation_comp_m_idx);
+                short creation_sign = negative_one_pow(created_substate_idx);
+
+                if (left_state != new_right_state)
+                {
+                    /*
+                    If the states are not equal, the inner product will
+                    be zero:
+
+                        < i | j > = delta_ij
+                    */
+                    continue;
+                }
+
+                onebody_res += annihilation_sign*creation_sign*interaction.spe[creation_orb_idx];   // Or annihilation_orb_idx, they are the same.
+            }
+        }
+    }
+    return onebody_res;
 }
 
 double calculate_onebody_matrix_element(
@@ -423,7 +549,8 @@ double calculate_twobody_matrix_element(
 void create_hamiltonian(const Interaction& interaction)
 {
     const Indices indices = generate_indices(interaction);
-    const std::vector<std::vector<unsigned short>> basis_states = calculate_m_basis_states(interaction);
+    // const std::vector<std::vector<unsigned short>> basis_states = calculate_m_basis_states(interaction);
+    const std::vector<std::bitset<n_bits_bitset>> basis_states = calculate_m_basis_states_bit_representation(interaction);
     const unsigned int m_dim = basis_states.size();
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
@@ -439,7 +566,7 @@ void create_hamiltonian(const Interaction& interaction)
             Calculate only the upper triangle of the Hamiltonian matrix.
             H is hermitian so we dont have to calculate both triangles.
             */
-            H(left_idx, right_idx) += calculate_onebody_matrix_element(
+            H(left_idx, right_idx) += calculate_onebody_matrix_element_bit_representation(
                 interaction,
                 indices,
                 basis_states[left_idx],
@@ -448,32 +575,33 @@ void create_hamiltonian(const Interaction& interaction)
         }
     }
     timer(start, "calculate_onebody_matrix_element");
-    start = timer();
-    // for (int left_idx = 0; left_idx < m_dim; left_idx++)
-    for (int left_idx : tq::trange(m_dim))
-    {
-        for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
-        {
-            H(left_idx, right_idx) += calculate_twobody_matrix_element(
-                interaction,
-                indices,
-                basis_states[left_idx],
-                basis_states[right_idx]
-            );
-        }
-    }
-    cout << endl;
-    timer(start, "calculate_twobody_matrix_element");
-    complete_hermitian_matrix(H);
-
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-    es.compute(H);
-
-    // for (auto val : es.eigenvalues())
+    std::exit(0);
+    // start = timer();
+    // // for (int left_idx = 0; left_idx < m_dim; left_idx++)
+    // for (int left_idx : tq::trange(m_dim))
     // {
-    //     cout << val << endl;
+    //     for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
+    //     {
+    //         H(left_idx, right_idx) += calculate_twobody_matrix_element(
+    //             interaction,
+    //             indices,
+    //             basis_states[left_idx],
+    //             basis_states[right_idx]
+    //         );
+    //     }
     // }
-    cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
-    print("m_dim", m_dim);
-    return;
+    // cout << endl;
+    // timer(start, "calculate_twobody_matrix_element");
+    // complete_hermitian_matrix(H);
+
+    // Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
+    // es.compute(H);
+
+    // // for (auto val : es.eigenvalues())
+    // // {
+    // //     cout << val << endl;
+    // // }
+    // cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
+    // print("m_dim", m_dim);
+    // return;
 }
