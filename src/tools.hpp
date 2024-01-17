@@ -82,15 +82,15 @@ inline unsigned short set_bit_and_count(std::bitset<n_bits_bitset>& state, unsig
     return count;
 }
 
-inline unsigned short unset_bit_and_count(std::bitset<n_bits_bitset>& state, unsigned short bit_to_unset)
+inline unsigned short reset_bit_and_count(std::bitset<n_bits_bitset>& state, unsigned short bit_to_reset)
 {
     /*
-    Unset bit number `bit_to_unset` and count how many bits before
-    `bit_to_unset` are set.
+    Reset bit number `bit_to_reset` and count how many bits before
+    `bit_to_reset` are set.
     */
     unsigned short count = 0;
-    for (unsigned short i = 0; i < bit_to_unset; i++) if (state.test(i)) count++;
-    state.set(bit_to_unset);
+    for (unsigned short i = 0; i < bit_to_reset; i++) if (state.test(i)) count++;
+    state.reset(bit_to_reset);
     return count;
 }
 
