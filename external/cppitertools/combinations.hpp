@@ -1,8 +1,8 @@
 #ifndef ITER_COMBINATIONS_HPP_
 #define ITER_COMBINATIONS_HPP_
 
-#include "internal/iteratoriterator.hpp"
-#include "internal/iterbase.hpp"
+#include "iteratoriterator.hpp"
+#include "iterbase.hpp"
 
 #include <iterator>
 #include <type_traits>
