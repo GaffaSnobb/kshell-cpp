@@ -219,8 +219,6 @@ double calculate_onebody_matrix_element_bit_representation(
                 */
                 std::bitset<n_bits_bitset> new_right_state = right_state;   // The contents of right_state is copied, not referenced.
 
-                // short annihalated_substate_idx = index(new_right_state, annihilation_comp_m_idx);
-                // if (annihalated_substate_idx == -1)
                 if (not new_right_state.test(annihilation_comp_m_idx))
                 {
                     /*
@@ -230,7 +228,7 @@ double calculate_onebody_matrix_element_bit_representation(
                     zero.
 
                     We need the index of the substate which will be
-                    annihalated because there might be a phase of -1.
+                    annihilated because there might be a phase of -1.
                     This is because we have to make sure that the
                     annihilation operator is placed next to the creation
                     operator it tries to annihilate:
@@ -248,13 +246,9 @@ double calculate_onebody_matrix_element_bit_representation(
                     continue;
                 }
 
-                unsigned short annihalated_substate_idx = unset_bit_and_count(new_right_state, annihilation_comp_m_idx);
-                short annihilation_sign = negative_one_pow(annihalated_substate_idx);
+                unsigned short annihilated_substate_idx = reset_bit_and_count(new_right_state, annihilation_comp_m_idx);
+                short annihilation_sign = negative_one_pow(annihilated_substate_idx);
                 
-                // new_right_state.erase(new_right_state.begin() + annihalated_substate_idx);
-                // short created_substate_idx = check_existence_and_bisect(new_right_state, creation_comp_m_idx);
-
-                // if (created_substate_idx == -1)
                 if (new_right_state.test(creation_comp_m_idx))
                 {
                     /*
@@ -264,9 +258,7 @@ double calculate_onebody_matrix_element_bit_representation(
                     */
                     continue;
                 }
-
                 short created_substate_idx = set_bit_and_count(new_right_state, creation_comp_m_idx);
-                // new_right_state.insert(new_right_state.begin() + created_substate_idx, creation_comp_m_idx);
                 short creation_sign = negative_one_pow(created_substate_idx);
 
                 if (left_state != new_right_state)
@@ -279,7 +271,6 @@ double calculate_onebody_matrix_element_bit_representation(
                     */
                     continue;
                 }
-
                 onebody_res += annihilation_sign*creation_sign*interaction.spe[creation_orb_idx];   // Or annihilation_orb_idx, they are the same.
             }
         }
@@ -343,9 +334,9 @@ double calculate_onebody_matrix_element(
                 and composite m substate indices 0, 1, 2, 3.
                 */
                 std::vector<unsigned short> new_right_state = right_state;
-                short annihalated_substate_idx = index(new_right_state, annihilation_comp_m_idx);
+                short annihilated_substate_idx = index(new_right_state, annihilation_comp_m_idx);
 
-                if (annihalated_substate_idx == -1)
+                if (annihilated_substate_idx == -1)
                 {
                     /*
                     If the index cannot be found, then it does not exist
@@ -354,7 +345,7 @@ double calculate_onebody_matrix_element(
                     zero.
 
                     We need the index of the substate which will be
-                    annihalated because there might be a phase of -1.
+                    annihilated because there might be a phase of -1.
                     This is because we have to make sure that the
                     annihilation operator is placed next to the creation
                     operator it tries to annihilate:
@@ -372,10 +363,10 @@ double calculate_onebody_matrix_element(
                     continue;
                 }
                 
-                short annihilation_sign = negative_one_pow(annihalated_substate_idx);
-                new_right_state.erase(new_right_state.begin() + annihalated_substate_idx);
-                short created_substate_idx = check_existence_and_bisect(new_right_state, creation_comp_m_idx);
+                short annihilation_sign = negative_one_pow(annihilated_substate_idx);
+                new_right_state.erase(new_right_state.begin() + annihilated_substate_idx);
 
+                short created_substate_idx = check_existence_and_bisect(new_right_state, creation_comp_m_idx);
                 if (created_substate_idx == -1)
                 {
                     /*
@@ -385,7 +376,7 @@ double calculate_onebody_matrix_element(
                     */
                     continue;
                 }
-
+                
                 new_right_state.insert(new_right_state.begin() + created_substate_idx, creation_comp_m_idx);
                 short creation_sign = negative_one_pow(created_substate_idx);
 
@@ -452,9 +443,9 @@ double calculate_twobody_matrix_element(
         {
             for (unsigned short annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
             {
-                const short annihalated_substate_idx_0 = index(right_state, annihilation_comp_m_idx_0);
+                const short annihilated_substate_idx_0 = index(right_state, annihilation_comp_m_idx_0);
 
-                if (annihalated_substate_idx_0 == -1)
+                if (annihilated_substate_idx_0 == -1)
                 {
                     /*
                     If the index cannot be found, then it does not exist
@@ -463,7 +454,7 @@ double calculate_twobody_matrix_element(
                     zero.
 
                     We need the index of the substate which will be
-                    annihalated because there might be a phase of -1.
+                    annihilated because there might be a phase of -1.
                     This is because we have to make sure that the
                     annihilation operator is placed next to the creation
                     operator it tries to annihilate:
@@ -482,13 +473,13 @@ double calculate_twobody_matrix_element(
                 }
                 
                 std::vector<unsigned short> new_right_state_annihilation = right_state;
-                short annihilation_sign = negative_one_pow(annihalated_substate_idx_0);
-                new_right_state_annihilation.erase(new_right_state_annihilation.begin() + annihalated_substate_idx_0);
+                short annihilation_sign = negative_one_pow(annihilated_substate_idx_0);
+                new_right_state_annihilation.erase(new_right_state_annihilation.begin() + annihilated_substate_idx_0);
 
-                short annihalated_substate_idx_1 = index(new_right_state_annihilation, annihilation_comp_m_idx_1);
-                if (annihalated_substate_idx_1 == -1) continue;
-                annihilation_sign *= negative_one_pow(annihalated_substate_idx_1);
-                new_right_state_annihilation.erase(new_right_state_annihilation.begin() + annihalated_substate_idx_1);
+                short annihilated_substate_idx_1 = index(new_right_state_annihilation, annihilation_comp_m_idx_1);
+                if (annihilated_substate_idx_1 == -1) continue;
+                annihilation_sign *= negative_one_pow(annihilated_substate_idx_1);
+                new_right_state_annihilation.erase(new_right_state_annihilation.begin() + annihilated_substate_idx_1);
 
                 Key6 annihilation_key = {
                     indices.orbital_idx_to_j_map[annihilation_orb_idx_0],
@@ -549,13 +540,19 @@ double calculate_twobody_matrix_element(
 void create_hamiltonian(const Interaction& interaction)
 {
     const Indices indices = generate_indices(interaction);
-    // const std::vector<std::vector<unsigned short>> basis_states = calculate_m_basis_states(interaction);
+    const std::vector<std::vector<unsigned short>> basis_states_old = calculate_m_basis_states(interaction);
     const std::vector<std::bitset<n_bits_bitset>> basis_states = calculate_m_basis_states_bit_representation(interaction);
     const unsigned int m_dim = basis_states.size();
 
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H_old;
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
+    H_old.resize(m_dim, m_dim);
+    H_old.setZero();
     H.resize(m_dim, m_dim);
     H.setZero();
+
+    print_vector(basis_states_old);
+    print_vector(basis_states);
 
     auto start = timer();
     for (unsigned int left_idx = 0; left_idx < m_dim; left_idx++)
@@ -572,9 +569,18 @@ void create_hamiltonian(const Interaction& interaction)
                 basis_states[left_idx],
                 basis_states[right_idx]
             );
+            H_old(left_idx, right_idx) += calculate_onebody_matrix_element(
+                interaction,
+                indices,
+                basis_states_old[left_idx],
+                basis_states_old[right_idx]
+            );
+
+            cout << H(left_idx, right_idx) << " : " << H_old(left_idx, right_idx) << endl;
         }
     }
     timer(start, "calculate_onebody_matrix_element");
+    cout << m_dim << endl;
     std::exit(0);
     // start = timer();
     // // for (int left_idx = 0; left_idx < m_dim; left_idx++)
