@@ -70,6 +70,30 @@ inline short negative_one_pow(short exponent)   // Dont really know if the compi
 
 short check_existence_and_bisect(const std::vector<unsigned short>& vec, const unsigned short value);
 
+inline unsigned short set_bit_and_count(std::bitset<n_bits_bitset>& state, unsigned short bit_to_set)
+{
+    /*
+    Set bit number `bit_to_set` and count how many bits before
+    `bit_to_set` are set.
+    */
+    unsigned short count = 0;
+    for (unsigned short i = 0; i < bit_to_set; i++) if (state.test(i)) count++;
+    state.set(bit_to_set);
+    return count;
+}
+
+inline unsigned short unset_bit_and_count(std::bitset<n_bits_bitset>& state, unsigned short bit_to_unset)
+{
+    /*
+    Unset bit number `bit_to_unset` and count how many bits before
+    `bit_to_unset` are set.
+    */
+    unsigned short count = 0;
+    for (unsigned short i = 0; i < bit_to_unset; i++) if (state.test(i)) count++;
+    state.set(bit_to_unset);
+    return count;
+}
+
 std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolution_clock> start, std::string name);
 std::chrono::time_point<std::chrono::high_resolution_clock> timer();
 
