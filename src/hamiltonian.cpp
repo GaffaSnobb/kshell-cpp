@@ -404,8 +404,6 @@ double calculate_twobody_matrix_element_bit_representation(
     const Indices& indices,
     const std::bitset<n_bits_bitset>& left_state,
     const std::bitset<n_bits_bitset>& right_state
-    // const std::vector<unsigned short>& left_state,
-    // const std::vector<unsigned short>& right_state
 )
 {
     double twobody_res = 0;
@@ -445,7 +443,8 @@ double calculate_twobody_matrix_element_bit_representation(
         {
             for (unsigned short annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
             {
-                if (not right_state.test(annihilation_comp_m_idx_0))
+                // if (not right_state.test(annihilation_comp_m_idx_0))
+                if (not right_state[annihilation_comp_m_idx_0])
                 {
                     /*
                     If the index cannot be found, then it does not exist
@@ -477,7 +476,8 @@ double calculate_twobody_matrix_element_bit_representation(
                 const unsigned short n_operator_swaps_annihilation_0 = reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_0);
                 short annihilation_sign = negative_one_pow(n_operator_swaps_annihilation_0);
 
-                if (not new_right_state_annihilation.test(annihilation_comp_m_idx_1)) continue;
+                // if (not new_right_state_annihilation.test(annihilation_comp_m_idx_1)) continue;
+                if (not new_right_state_annihilation[annihilation_comp_m_idx_1]) continue;
                 const unsigned short n_operator_swaps_annihilation_1 = reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
                 annihilation_sign *= negative_one_pow(n_operator_swaps_annihilation_1);
 
@@ -500,24 +500,16 @@ double calculate_twobody_matrix_element_bit_representation(
                 {
                     for (unsigned short creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
                     {
-                        if (new_right_state_annihilation.test(creation_comp_m_idx_1)) continue;
+                        // if (new_right_state_annihilation.test(creation_comp_m_idx_1)) continue;
+                        if (new_right_state_annihilation[creation_comp_m_idx_1]) continue;
                         std::bitset<n_bits_bitset> new_right_state_creation = new_right_state_annihilation;
                         const unsigned short n_operator_swaps_creation_1 = set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_1);
                         short creation_sign = negative_one_pow(n_operator_swaps_creation_1);
 
-                        if (new_right_state_annihilation.test(creation_comp_m_idx_0)) continue;
+                        // if (new_right_state_annihilation.test(creation_comp_m_idx_0)) continue;
+                        if (new_right_state_annihilation[creation_comp_m_idx_0]) continue;
                         const unsigned short n_operator_swaps_creation_0 = set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_0);
                         creation_sign *= negative_one_pow(n_operator_swaps_creation_0);
-                        
-                        // short created_substate_idx_1 = check_existence_and_bisect(new_right_state_creation, creation_comp_m_idx_1);
-                        // if (created_substate_idx_1 == -1) continue;
-                        // short creation_sign = negative_one_pow(created_substate_idx_1);
-                        // new_right_state_creation.insert(new_right_state_creation.begin() + created_substate_idx_1, creation_comp_m_idx_1);
-
-                        // short created_substate_idx_0 = check_existence_and_bisect(new_right_state_creation, creation_comp_m_idx_0);
-                        // if (created_substate_idx_0 == -1) continue;
-                        // creation_sign *= negative_one_pow(created_substate_idx_0);
-                        // new_right_state_creation.insert(new_right_state_creation.begin() + created_substate_idx_0, creation_comp_m_idx_0);
 
                         if (left_state != new_right_state_creation) continue;
 
@@ -724,16 +716,16 @@ void create_hamiltonian_bit_representation(const Interaction& interaction)
     }
     cout << endl;
     timer(start, "calculate_twobody_matrix_element_bit_representation");
-    complete_hermitian_matrix(H);
+    // complete_hermitian_matrix(H);
 
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-    es.compute(H);
+    // Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
+    // es.compute(H);
 
     // // for (auto val : es.eigenvalues())
     // // {
     // //     cout << val << endl;
     // // }
-    cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
+    // cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
     print("m_dim", m_dim);
     return;
 }

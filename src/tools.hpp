@@ -95,7 +95,8 @@ inline unsigned short set_bit_and_count_swaps(std::bitset<n_bits_bitset>& state,
                         = - | (3) >
     */
     unsigned short count = 0;
-    for (unsigned short i = 0; i < bit_to_set; i++) if (state.test(i)) count++;
+    // for (unsigned short i = 0; i < bit_to_set; i++) if (state.test(i)) count++;
+    for (unsigned short i = 0; i < bit_to_set; i++) if (state[i]) count++;
     state.set(bit_to_set);
     return count;
 }
@@ -108,7 +109,8 @@ inline unsigned short reset_bit_and_count_swaps(std::bitset<n_bits_bitset>& stat
     performed to place the annihilation operator correctly.
     */
     unsigned short count = 0;
-    for (unsigned short i = 0; i < bit_to_reset; i++) if (state.test(i)) count++;
+    // for (unsigned short i = 0; i < bit_to_reset; i++) if (state.test(i)) count++;
+    for (unsigned short i = 0; i < bit_to_reset; i++) if (state[i]) count++;
     state.reset(bit_to_reset);
     return count;
 }
