@@ -8,7 +8,7 @@
 #include "basis.hpp"
 #include "parameters.hpp"
 #include "../external/eigen-3.4.0/Eigen/Dense"
-#include "../external/eigen-3.4.0/Eigen/Eigenvalues"
+// #include "../external/eigen-3.4.0/Eigen/Eigenvalues"
 #include "../external/tqdm-cpp/tqdm.hpp"
 
 using std::cout;
@@ -219,7 +219,8 @@ double calculate_onebody_matrix_element_bit_representation(
                 */
                 std::bitset<n_bits_bitset> new_right_state = right_state;   // The contents of right_state is copied, not referenced.
 
-                if (not new_right_state.test(annihilation_comp_m_idx))
+                // if (not new_right_state.test(annihilation_comp_m_idx))
+                if (not new_right_state[annihilation_comp_m_idx])
                 {
                     /*
                     If the index cannot be found, then it does not exist
@@ -250,7 +251,8 @@ double calculate_onebody_matrix_element_bit_representation(
                 const unsigned short n_operator_swaps_annihilation = reset_bit_and_count_swaps(new_right_state, annihilation_comp_m_idx);
                 const short annihilation_sign = negative_one_pow(n_operator_swaps_annihilation);
                 
-                if (new_right_state.test(creation_comp_m_idx))
+                // if (new_right_state.test(creation_comp_m_idx))
+                if (new_right_state[creation_comp_m_idx])
                 {
                     /*
                     `creation_comp_m_idx` already exists in
@@ -407,6 +409,7 @@ double calculate_twobody_matrix_element_bit_representation(
 )
 {
     double twobody_res = 0;
+    // double creation_res_switch = 0; // For removing if statements in the inner creation loop. Multiply the result by 0 instead of using if (condition) continue;.
     const unsigned int n_indices = indices.creation_orb_indices_0.size();
     
     for (unsigned int i = 0; i < n_indices; i++)
@@ -500,18 +503,38 @@ double calculate_twobody_matrix_element_bit_representation(
                 {
                     for (unsigned short creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
                     {
+                        /*
+                        Performance notes
+                        -----------------
+                        Using a "switch" variable instead of if-statements
+                        gives worse performance, but that might be due to
+                        increased number of CG dictionary lookups.
+
+                        creation_res_switch = (not new_right_state_annihilation[creation_comp_m_idx_1]);
+                        creation_res_switch *= (not new_right_state_annihilation[creation_comp_m_idx_0]);
+                        creation_res_switch *= (left_state == new_right_state_creation);
+
+                        The multiplications themselves might be better than ifs
+                        for potential GPU acceleration.
+                        */
+                        
                         // if (new_right_state_annihilation.test(creation_comp_m_idx_1)) continue;
                         if (new_right_state_annihilation[creation_comp_m_idx_1]) continue;
+                        // creation_res_switch = (not new_right_state_annihilation[creation_comp_m_idx_1]);
+                        
                         std::bitset<n_bits_bitset> new_right_state_creation = new_right_state_annihilation;
                         const unsigned short n_operator_swaps_creation_1 = set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_1);
                         short creation_sign = negative_one_pow(n_operator_swaps_creation_1);
 
                         // if (new_right_state_annihilation.test(creation_comp_m_idx_0)) continue;
                         if (new_right_state_annihilation[creation_comp_m_idx_0]) continue;
+                        // creation_res_switch *= (not new_right_state_annihilation[creation_comp_m_idx_0]);
+                        
                         const unsigned short n_operator_swaps_creation_0 = set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_0);
                         creation_sign *= negative_one_pow(n_operator_swaps_creation_0);
 
                         if (left_state != new_right_state_creation) continue;
+                        // creation_res_switch *= (left_state == new_right_state_creation);
 
                         const Key6 creation_key = {
                             indices.orbital_idx_to_j_map[creation_orb_idx_0],
@@ -524,7 +547,7 @@ double calculate_twobody_matrix_element_bit_representation(
 
                         const double cg_creation = clebsch_gordan.at(creation_key);
                         // if (cg_creation == 0) continue;  // Might be faster to just multiply with 0 instead of checking.
-                        creation_res += creation_sign*cg_creation;
+                        creation_res += creation_sign*cg_creation;//*creation_res_switch;
                     }
                 }
                 twobody_res += annihilation_norm*creation_norm*tbme*creation_res*annihilation_sign*cg_annihilation;
@@ -673,7 +696,7 @@ double calculate_twobody_matrix_element(
     return twobody_res;
 }
 
-void create_hamiltonian_bit_representation(const Interaction& interaction)
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_bit_representation(const Interaction& interaction)
 {
     const Indices indices = generate_indices(interaction);
     const std::vector<std::bitset<n_bits_bitset>> basis_states = calculate_m_basis_states_bit_representation(interaction);
@@ -714,20 +737,11 @@ void create_hamiltonian_bit_representation(const Interaction& interaction)
             );
         }
     }
-    cout << endl;
+    cout << endl;   // For the progress bar.
     timer(start, "calculate_twobody_matrix_element_bit_representation");
-    // complete_hermitian_matrix(H);
-
-    // Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-    // es.compute(H);
-
-    // // for (auto val : es.eigenvalues())
-    // // {
-    // //     cout << val << endl;
-    // // }
-    // cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
-    print("m_dim", m_dim);
-    return;
+    complete_hermitian_matrix(H);
+    
+    return H;
 }
 
 void create_hamiltonian(const Interaction& interaction)
