@@ -70,11 +70,29 @@ inline short negative_one_pow(short exponent)   // Dont really know if the compi
 
 short check_existence_and_bisect(const std::vector<unsigned short>& vec, const unsigned short value);
 
-inline unsigned short set_bit_and_count(std::bitset<n_bits_bitset>& state, unsigned short bit_to_set)
+inline unsigned short set_bit_and_count_swaps(std::bitset<n_bits_bitset>& state, unsigned short bit_to_set)
 {
     /*
     Set bit number `bit_to_set` and count how many bits before
-    `bit_to_set` are set.
+    `bit_to_set` are set / count how many operator swaps must be
+    performed to place the creation operator correctly.
+
+    We need to know how many bits before the bit we want
+    to annihilate are set. This corresponds to how many
+    times we must swap the positions of operators and
+    thus if we get a phase of +1 or -1. This is because
+    we have to make sure that the annihilation operator
+    is placed next to the creation operator it tries to
+    annihilate:
+
+        c_0 | (0, 3) > = c_0 c_0^\dagger c_3^\dagger | core >
+                        = c_3^\dagger | core >
+                        = | (3) >
+
+        c_0 | (3, 0) > = c_0 c_3^\dagger c_0^\dagger | core >
+                        = - c_0 c_0^\dagger c_3^\dagger | core >
+                        = - c_3^\dagger | core >
+                        = - | (3) >
     */
     unsigned short count = 0;
     for (unsigned short i = 0; i < bit_to_set; i++) if (state.test(i)) count++;
@@ -82,11 +100,12 @@ inline unsigned short set_bit_and_count(std::bitset<n_bits_bitset>& state, unsig
     return count;
 }
 
-inline unsigned short reset_bit_and_count(std::bitset<n_bits_bitset>& state, unsigned short bit_to_reset)
+inline unsigned short reset_bit_and_count_swaps(std::bitset<n_bits_bitset>& state, unsigned short bit_to_reset)
 {
     /*
     Reset bit number `bit_to_reset` and count how many bits before
-    `bit_to_reset` are set.
+    `bit_to_reset` are set / count how many operator swaps must be
+    performed to place the annihilation operator correctly.
     */
     unsigned short count = 0;
     for (unsigned short i = 0; i < bit_to_reset; i++) if (state.test(i)) count++;
