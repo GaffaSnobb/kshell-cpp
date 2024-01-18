@@ -681,22 +681,15 @@ double calculate_twobody_matrix_element(
     return twobody_res;
 }
 
-void create_hamiltonian(const Interaction& interaction)
+void create_hamiltonian_bit_representation(const Interaction& interaction)
 {
     const Indices indices = generate_indices(interaction);
-    const std::vector<std::vector<unsigned short>> basis_states_old = calculate_m_basis_states(interaction);
     const std::vector<std::bitset<n_bits_bitset>> basis_states = calculate_m_basis_states_bit_representation(interaction);
     const unsigned int m_dim = basis_states.size();
 
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H_old;
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
-    H_old.resize(m_dim, m_dim);
-    H_old.setZero();
     H.resize(m_dim, m_dim);
     H.setZero();
-
-    print_vector(basis_states_old);
-    print_vector(basis_states);
 
     auto start = timer();
     for (unsigned int left_idx = 0; left_idx < m_dim; left_idx++)
@@ -713,14 +706,65 @@ void create_hamiltonian(const Interaction& interaction)
                 basis_states[left_idx],
                 basis_states[right_idx]
             );
-            H_old(left_idx, right_idx) += calculate_onebody_matrix_element(
+        }
+    }
+    timer(start, "calculate_onebody_matrix_element_bit_representation");
+    start = timer();
+    for (int left_idx : tq::trange(m_dim))
+    {
+        for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
+        {
+            H(left_idx, right_idx) += calculate_twobody_matrix_element_bit_representation(
                 interaction,
                 indices,
-                basis_states_old[left_idx],
-                basis_states_old[right_idx]
+                basis_states[left_idx],
+                basis_states[right_idx]
             );
+        }
+    }
+    cout << endl;
+    timer(start, "calculate_twobody_matrix_element_bit_representation");
+    complete_hermitian_matrix(H);
 
-            // cout << H(left_idx, right_idx) << " : " << H_old(left_idx, right_idx) << endl;
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
+    es.compute(H);
+
+    // // for (auto val : es.eigenvalues())
+    // // {
+    // //     cout << val << endl;
+    // // }
+    cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
+    print("m_dim", m_dim);
+    return;
+}
+
+void create_hamiltonian(const Interaction& interaction)
+{
+    const Indices indices = generate_indices(interaction);
+    const std::vector<std::vector<unsigned short>> basis_states = calculate_m_basis_states(interaction);
+    const unsigned int m_dim = basis_states.size();
+
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
+    H.resize(m_dim, m_dim);
+    H.setZero();
+
+    print_vector(basis_states);
+
+    auto start = timer();
+    for (unsigned int left_idx = 0; left_idx < m_dim; left_idx++)
+    {
+        for (unsigned int right_idx = left_idx; right_idx < m_dim; right_idx++)
+        {
+            /*
+            Calculate only the upper triangle of the Hamiltonian matrix.
+            H is hermitian so we dont have to calculate both triangles.
+            */
+            H(left_idx, right_idx) += calculate_onebody_matrix_element(
+                interaction,
+                indices,
+                basis_states[left_idx],
+                basis_states[right_idx]
+            );
         }
     }
     timer(start, "calculate_onebody_matrix_element");
@@ -730,39 +774,26 @@ void create_hamiltonian(const Interaction& interaction)
     {
         for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
         {
-            H_old(left_idx, right_idx) += calculate_twobody_matrix_element(
-                interaction,
-                indices,
-                basis_states_old[left_idx],
-                basis_states_old[right_idx]
-            );
-            H(left_idx, right_idx) += calculate_twobody_matrix_element_bit_representation(
+            H(left_idx, right_idx) += calculate_twobody_matrix_element(
                 interaction,
                 indices,
                 basis_states[left_idx],
                 basis_states[right_idx]
             );
-            // cout << H(left_idx, right_idx) << " : " << H_old(left_idx, right_idx) << endl;
         }
     }
     cout << endl;
     timer(start, "calculate_twobody_matrix_element");
     complete_hermitian_matrix(H);
-    complete_hermitian_matrix(H_old);
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
     es.compute(H);
-
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es_old;
-    es_old.compute(H_old);
 
     // // for (auto val : es.eigenvalues())
     // // {
     // //     cout << val << endl;
     // // }
     cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
-    cout << "The eigenvalues of A are: " << es_old.eigenvalues().transpose() << endl;
-    cout << "(H == H_old): " << (H == H_old) << endl;
     print("m_dim", m_dim);
     return;
 }
