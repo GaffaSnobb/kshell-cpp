@@ -93,11 +93,25 @@ inline unsigned short set_bit_and_count_swaps(std::bitset<n_bits_bitset>& state,
                         = - c_0 c_0^\dagger c_3^\dagger | core >
                         = - c_3^\dagger | core >
                         = - | (3) >
+
+    Performance notes
+    -----------------
+    (1): for (unsigned short i = 0; i < bit_to_set; i++) if (state.test(i)) count++;
+    (2): for (unsigned short i = 0; i < bit_to_set; i++) if (state[i]) count++;
+    (3): for (unsigned short i = 0; i < bit_to_set; i++) count += state[i];    
+
+    (1) is slowest. (2) is a little bit faster than (3) at -O0. (2) and
+    (3) are approximately equally fast at -Ofast, but it might be
+    beneficial to choose (3) with regards to GPGPU because it does not
+    use `if`.
+
     */
     unsigned short count = 0;
     // for (unsigned short i = 0; i < bit_to_set; i++) if (state.test(i)) count++;
-    for (unsigned short i = 0; i < bit_to_set; i++) if (state[i]) count++;
-    state.set(bit_to_set);
+    // for (unsigned short i = 0; i < bit_to_set; i++) if (state[i]) count++;
+    for (unsigned short i = 0; i < bit_to_set; i++) count += state[i];
+    // state.set(bit_to_set);
+    state[bit_to_set] = 1;
     return count;
 }
 
@@ -110,8 +124,10 @@ inline unsigned short reset_bit_and_count_swaps(std::bitset<n_bits_bitset>& stat
     */
     unsigned short count = 0;
     // for (unsigned short i = 0; i < bit_to_reset; i++) if (state.test(i)) count++;
-    for (unsigned short i = 0; i < bit_to_reset; i++) if (state[i]) count++;
-    state.reset(bit_to_reset);
+    // for (unsigned short i = 0; i < bit_to_reset; i++) if (state[i]) count++;
+    for (unsigned short i = 0; i < bit_to_reset; i++) count += state[i];
+    // state.reset(bit_to_reset);
+    state[bit_to_reset] = 0;
     return count;
 }
 
