@@ -6,11 +6,17 @@ using std::cout;
 using std::endl;
 
 template <typename T>
-void print_vector(const std::vector<T>& vec) {
-    for (const T& val : vec) {
-        cout << val << " ";
+void print_vector(const std::vector<T>& vec)
+{   
+    bool first_value = true;
+    cout << "[";
+    for (const T& val : vec)
+    {
+        if (not first_value) cout << ", ";
+        cout << val;
+        first_value = false;
     }
-    cout << endl;
+    cout << "]" << endl;
 }
 template <typename T>
 void print_vector(const std::vector<std::vector<T>>& nested_vector)
