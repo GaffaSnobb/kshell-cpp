@@ -179,7 +179,7 @@ double calculate_onebody_matrix_element_bit_representation(
         interaction files, are only defined for when the two indices are
         the same.
         */
-        unsigned short annihilation_orb_idx = creation_orb_idx;
+        const unsigned short annihilation_orb_idx = creation_orb_idx;
     
         for (unsigned short creation_comp_m_idx : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx])
         {
@@ -227,11 +227,13 @@ double calculate_onebody_matrix_element_bit_representation(
                     substate which is un-occupied and the result is
                     zero.
 
-                    We need the index of the substate which will be
-                    annihilated because there might be a phase of -1.
-                    This is because we have to make sure that the
-                    annihilation operator is placed next to the creation
-                    operator it tries to annihilate:
+                    We need to know how many bits before the bit we want
+                    to annihilate are set. This corresponds to how many
+                    times we must swap the positions of operators and
+                    thus if we get a phase of +1 or -1. This is because
+                    we have to make sure that the annihilation operator
+                    is placed next to the creation operator it tries to
+                    annihilate:
 
                         c_0 | (0, 3) > = c_0 c_0^\dagger c_3^\dagger | core >
                                        = c_3^\dagger | core >
@@ -241,13 +243,12 @@ double calculate_onebody_matrix_element_bit_representation(
                                        = - c_0 c_0^\dagger c_3^\dagger | core >
                                        = - c_3^\dagger | core >
                                        = - | (3) >
-
                     */
                     continue;
                 }
 
-                unsigned short annihilated_substate_idx = reset_bit_and_count(new_right_state, annihilation_comp_m_idx);
-                short annihilation_sign = negative_one_pow(annihilated_substate_idx);
+                const unsigned short n_operator_swaps_annihilation = reset_bit_and_count_swaps(new_right_state, annihilation_comp_m_idx);
+                const short annihilation_sign = negative_one_pow(n_operator_swaps_annihilation);
                 
                 if (new_right_state.test(creation_comp_m_idx))
                 {
@@ -258,8 +259,8 @@ double calculate_onebody_matrix_element_bit_representation(
                     */
                     continue;
                 }
-                short created_substate_idx = set_bit_and_count(new_right_state, creation_comp_m_idx);
-                short creation_sign = negative_one_pow(created_substate_idx);
+                const unsigned short n_operator_swaps_creation = set_bit_and_count_swaps(new_right_state, creation_comp_m_idx);
+                const short creation_sign = negative_one_pow(n_operator_swaps_creation);
 
                 if (left_state != new_right_state)
                 {
@@ -376,7 +377,7 @@ double calculate_onebody_matrix_element(
                     */
                     continue;
                 }
-                
+
                 new_right_state.insert(new_right_state.begin() + created_substate_idx, creation_comp_m_idx);
                 short creation_sign = negative_one_pow(created_substate_idx);
 
@@ -396,6 +397,149 @@ double calculate_onebody_matrix_element(
         }
     }
     return onebody_res;
+}
+
+double calculate_twobody_matrix_element_bit_representation(
+    const Interaction& interaction,
+    const Indices& indices,
+    const std::bitset<n_bits_bitset>& left_state,
+    const std::bitset<n_bits_bitset>& right_state
+    // const std::vector<unsigned short>& left_state,
+    // const std::vector<unsigned short>& right_state
+)
+{
+    double twobody_res = 0;
+    const unsigned int n_indices = indices.creation_orb_indices_0.size();
+    
+    for (unsigned int i = 0; i < n_indices; i++)
+    {
+        /*
+        The values in the following vectors corresponds to using these
+        nested loops:
+
+        for creation_orb_idx_0 in range(n_orbitals):
+            for creation_orb_idx_1 in range(creation_orb_idx_0, n_orbitals):
+                
+                for annihilation_orb_idx_0 in range(n_orbitals):
+                    for annihilation_orb_idx_1 in range(annihilation_orb_idx_0, n_orbitals):
+                    
+                        for j_coupled in range(j_min, j_max + 2, 2):
+                            for m_coupled in range(-j_coupled, j_coupled + 2, 2):
+        
+        It gives good reduction in program run time by using
+        pre-calculated indices instead of four nested loops.
+        */
+        const unsigned short creation_orb_idx_0 = indices.creation_orb_indices_0[i];
+        const unsigned short creation_orb_idx_1 = indices.creation_orb_indices_1[i];
+        const unsigned short annihilation_orb_idx_0 = indices.annihilation_orb_indices_0[i];
+        const unsigned short annihilation_orb_idx_1 = indices.annihilation_orb_indices_1[i];
+        const unsigned short j_coupled = indices.j_coupled[i];
+        const short m_coupled = indices.m_coupled[i];
+        const double tbme = indices.tbme[i];
+
+        const double creation_norm = 1/std::sqrt(1 + (creation_orb_idx_0 == creation_orb_idx_1));
+        const double annihilation_norm = 1/std::sqrt(1 + (annihilation_orb_idx_0 == annihilation_orb_idx_1));
+
+        // Annihilation terms
+        for (unsigned short annihilation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0])
+        {
+            for (unsigned short annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
+            {
+                if (not right_state.test(annihilation_comp_m_idx_0))
+                {
+                    /*
+                    If the index cannot be found, then it does not exist
+                    in the list. Aka. we are trying to annihilate a
+                    substate which is un-occupied and the result is
+                    zero.
+
+                    We need to know how many bits before the bit we want
+                    to annihilate are set. This corresponds to how many
+                    times we must swap the positions of operators and
+                    thus if we get a phase of +1 or -1. This is because
+                    we have to make sure that the annihilation operator
+                    is placed next to the creation operator it tries to
+                    annihilate:
+
+                        c_0 | (0, 3) > = c_0 c_0^\dagger c_3^\dagger | core >
+                                       = c_3^\dagger | core >
+                                       = | (3) >
+
+                        c_0 | (3, 0) > = c_0 c_3^\dagger c_0^\dagger | core >
+                                       = - c_0 c_0^\dagger c_3^\dagger | core >
+                                       = - c_3^\dagger | core >
+                                       = - | (3) >
+                    */
+                    continue;
+                }
+
+                std::bitset<n_bits_bitset> new_right_state_annihilation = right_state;
+                const unsigned short n_operator_swaps_annihilation_0 = reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_0);
+                short annihilation_sign = negative_one_pow(n_operator_swaps_annihilation_0);
+
+                if (not new_right_state_annihilation.test(annihilation_comp_m_idx_1)) continue;
+                const unsigned short n_operator_swaps_annihilation_1 = reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
+                annihilation_sign *= negative_one_pow(n_operator_swaps_annihilation_1);
+
+                const Key6 annihilation_key = {
+                    indices.orbital_idx_to_j_map[annihilation_orb_idx_0],
+                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0],
+                    indices.orbital_idx_to_j_map[annihilation_orb_idx_1],
+                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1],
+                    j_coupled,
+                    m_coupled
+                };
+
+                const double cg_annihilation = clebsch_gordan.at(annihilation_key);
+                if (cg_annihilation == 0) continue;
+
+                // Creation terms
+                double creation_res = 0.0;
+
+                for (unsigned short creation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_0])
+                {
+                    for (unsigned short creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
+                    {
+                        if (new_right_state_annihilation.test(creation_comp_m_idx_1)) continue;
+                        std::bitset<n_bits_bitset> new_right_state_creation = new_right_state_annihilation;
+                        const unsigned short n_operator_swaps_creation_1 = set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_1);
+                        short creation_sign = negative_one_pow(n_operator_swaps_creation_1);
+
+                        if (new_right_state_annihilation.test(creation_comp_m_idx_0)) continue;
+                        const unsigned short n_operator_swaps_creation_0 = set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_0);
+                        creation_sign *= negative_one_pow(n_operator_swaps_creation_0);
+                        
+                        // short created_substate_idx_1 = check_existence_and_bisect(new_right_state_creation, creation_comp_m_idx_1);
+                        // if (created_substate_idx_1 == -1) continue;
+                        // short creation_sign = negative_one_pow(created_substate_idx_1);
+                        // new_right_state_creation.insert(new_right_state_creation.begin() + created_substate_idx_1, creation_comp_m_idx_1);
+
+                        // short created_substate_idx_0 = check_existence_and_bisect(new_right_state_creation, creation_comp_m_idx_0);
+                        // if (created_substate_idx_0 == -1) continue;
+                        // creation_sign *= negative_one_pow(created_substate_idx_0);
+                        // new_right_state_creation.insert(new_right_state_creation.begin() + created_substate_idx_0, creation_comp_m_idx_0);
+
+                        if (left_state != new_right_state_creation) continue;
+
+                        const Key6 creation_key = {
+                            indices.orbital_idx_to_j_map[creation_orb_idx_0],
+                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_0],
+                            indices.orbital_idx_to_j_map[creation_orb_idx_1],
+                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_1],
+                            j_coupled,
+                            m_coupled
+                        };
+
+                        const double cg_creation = clebsch_gordan.at(creation_key);
+                        // if (cg_creation == 0) continue;  // Might be faster to just multiply with 0 instead of checking.
+                        creation_res += creation_sign*cg_creation;
+                    }
+                }
+                twobody_res += annihilation_norm*creation_norm*tbme*creation_res*annihilation_sign*cg_annihilation;
+            }
+        }
+    }
+    return twobody_res;
 }
 
 double calculate_twobody_matrix_element(
@@ -576,38 +720,49 @@ void create_hamiltonian(const Interaction& interaction)
                 basis_states_old[right_idx]
             );
 
-            cout << H(left_idx, right_idx) << " : " << H_old(left_idx, right_idx) << endl;
+            // cout << H(left_idx, right_idx) << " : " << H_old(left_idx, right_idx) << endl;
         }
     }
     timer(start, "calculate_onebody_matrix_element");
-    cout << m_dim << endl;
-    std::exit(0);
-    // start = timer();
-    // // for (int left_idx = 0; left_idx < m_dim; left_idx++)
-    // for (int left_idx : tq::trange(m_dim))
-    // {
-    //     for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
-    //     {
-    //         H(left_idx, right_idx) += calculate_twobody_matrix_element(
-    //             interaction,
-    //             indices,
-    //             basis_states[left_idx],
-    //             basis_states[right_idx]
-    //         );
-    //     }
-    // }
-    // cout << endl;
-    // timer(start, "calculate_twobody_matrix_element");
-    // complete_hermitian_matrix(H);
+    start = timer();
+    // for (int left_idx = 0; left_idx < m_dim; left_idx++)
+    for (int left_idx : tq::trange(m_dim))
+    {
+        for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
+        {
+            H_old(left_idx, right_idx) += calculate_twobody_matrix_element(
+                interaction,
+                indices,
+                basis_states_old[left_idx],
+                basis_states_old[right_idx]
+            );
+            H(left_idx, right_idx) += calculate_twobody_matrix_element_bit_representation(
+                interaction,
+                indices,
+                basis_states[left_idx],
+                basis_states[right_idx]
+            );
+            // cout << H(left_idx, right_idx) << " : " << H_old(left_idx, right_idx) << endl;
+        }
+    }
+    cout << endl;
+    timer(start, "calculate_twobody_matrix_element");
+    complete_hermitian_matrix(H);
+    complete_hermitian_matrix(H_old);
 
-    // Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-    // es.compute(H);
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
+    es.compute(H);
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es_old;
+    es_old.compute(H_old);
 
     // // for (auto val : es.eigenvalues())
     // // {
     // //     cout << val << endl;
     // // }
-    // cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
-    // print("m_dim", m_dim);
-    // return;
+    cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
+    cout << "The eigenvalues of A are: " << es_old.eigenvalues().transpose() << endl;
+    cout << "(H == H_old): " << (H == H_old) << endl;
+    print("m_dim", m_dim);
+    return;
 }
