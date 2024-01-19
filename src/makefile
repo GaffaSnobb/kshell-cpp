@@ -3,7 +3,7 @@ TARGET = run.out
 SRCS = tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp
 OBJS = $(SRCS:.cpp=.o)
 DEPS = $(OBJS:.o=.d)
-CXXFLAGS = -std=c++20 -MMD
+CXXFLAGS = -std=c++20 -MMD -Wall -fopenmp -Ofast
 
 TEST_SRC = ../tests/hash_tests.cpp
 TEST_OBJ = $(TEST_SRC:.cpp=.o)
@@ -31,7 +31,6 @@ test: $(TEST_OBJ)
 # Include the dependency files
 -include $(DEPS)
 
-# Clean rule
 clean:
 	rm -f $(OBJS) $(TARGET) $(DEPS) $(TEST_OBJ) $(TEST_EXEC)
 
