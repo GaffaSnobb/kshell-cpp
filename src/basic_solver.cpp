@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <algorithm>
 #include <chrono>
@@ -18,7 +19,7 @@ using std::endl;
 // using std::chrono::duration_cast;
 // using std::chrono::milliseconds;
 
-int main()
+int main(int argc, char* argv[])
 {
 
     // std::bitset<16> state_0;
@@ -45,14 +46,20 @@ int main()
 
     // return 0;
 
+    // unsigned short n_valence_protons = 1;
+    // unsigned short n_valence_neutrons = 2;
+    unsigned short n_valence_protons = std::stoi(argv[1]);
+    unsigned short n_valence_neutrons = std::stoi(argv[2]);
+    
+    print("n_valence_protons", n_valence_protons);
+    print("n_valence_neutrons", n_valence_neutrons);
+
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
 
     std::vector<int> timing;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 1; i++)
     {
         auto start = timer();
-        unsigned short n_valence_protons = 2;
-        unsigned short n_valence_neutrons = 1;
         std::string interaction_filename = "../snt/w.snt";
         const Interaction interaction = load_interaction(interaction_filename, n_valence_protons, n_valence_neutrons);
         // create_hamiltonian(interaction);
@@ -61,11 +68,22 @@ int main()
     }
     print_vector(timing);
 
+    auto start = timer();
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
     es.compute(H);
-    cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
+    es.eigenvalues();
+    timer(start, "eigensolver");
+
+    std::ofstream outfile("matrix.txt");
+    if (outfile.is_open())
+    {
+        outfile << H << std::endl;
+        outfile.close();
+    }
+
+    // cout << "The eigenvalues of A are: " << es.eigenvalues().transpose() << endl;
     
-    print("m_dim", H.rows());
+    // print("m_dim", H.rows());
     // print("n_proton_orbitals", interaction.model_space_protons.orbitals.size());
     // print("n_neutron_orbitals", interaction.model_space_neutrons.orbitals.size());
     // print("n_core_protons", interaction.n_core_protons);
