@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <bitset>
+#include <omp.h>
 #include "data_structures.hpp"
 #include "tools.hpp"
 #include "basis.hpp"
@@ -701,6 +702,10 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_bit_rep
     const Indices indices = generate_indices(interaction);
     const std::vector<std::bitset<n_bits_bitset>> basis_states = calculate_m_basis_states_bit_representation(interaction);
     const unsigned int m_dim = basis_states.size();
+    print("m_dim", m_dim);
+    print("m_dim**2", m_dim*m_dim);
+    print("H size (MB): ", m_dim*m_dim*sizeof(double)/1000./1000.);
+    // std::exit(0);
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
     H.resize(m_dim, m_dim);
@@ -725,8 +730,19 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_bit_rep
     }
     timer(start, "calculate_onebody_matrix_element_bit_representation");
     start = timer();
-    for (int left_idx : tq::trange(m_dim))
+
+    #pragma omp parallel for //num_threads(6)
+    // for (int left_idx : tq::trange(m_dim))
+    for (unsigned int left_idx = 0; left_idx < m_dim; left_idx++)
     {
+        int thread_id = omp_get_thread_num();
+        
+        if (thread_id == 0)
+        {
+            int num_threads = omp_get_num_threads();
+            cout << "\r" << left_idx << " of ≈" << (double)m_dim/num_threads << std::flush;
+        }
+        
         for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
         {
             H(left_idx, right_idx) += calculate_twobody_matrix_element_bit_representation(
@@ -739,8 +755,7 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_bit_rep
     }
     cout << endl;   // For the progress bar.
     timer(start, "calculate_twobody_matrix_element_bit_representation");
-    complete_hermitian_matrix(H);
-    
+    complete_hermitian_matrix(H);    
     return H;
 }
 
