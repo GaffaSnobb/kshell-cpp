@@ -2,7 +2,7 @@
 # CXX = /usr/lib/llvm-14/bin/clang++
 CXX = hipcc
 EXEC = run.out
-SRCS = tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp
+SRCS = tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp generate_indices.cpp hamiltonian_bitset_representation.cpp
 OBJS = $(SRCS:.cpp=.o)
 DEPS = $(OBJS:.o=.d)
 CXXFLAGS = -std=c++20 -MMD -Wall -fopenmp -Ofast
