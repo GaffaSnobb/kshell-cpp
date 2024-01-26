@@ -1,5 +1,7 @@
-CXX = clang++
-TARGET = run.out
+# CXX = clang++
+# CXX = /usr/lib/llvm-14/bin/clang++
+CXX = hipcc
+EXEC = run.out
 SRCS = tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp
 OBJS = $(SRCS:.cpp=.o)
 DEPS = $(OBJS:.o=.d)
@@ -9,12 +11,16 @@ TEST_SRC = ../tests/hash_tests.cpp
 TEST_OBJ = $(TEST_SRC:.cpp=.o)
 TEST_EXEC = hash_test.out
 
+PLAYGROUND_SRC = playground.cpp
+PLAYGROUND_OBJ = $(PLAYGROUND_SRC:.cpp=.o)
+PLAYGROUND_EXEC = playground.out
+
 # Build all
-all: $(TARGET)
+all: $(EXEC)
 
 # Link
-$(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+$(EXEC): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(EXEC) $(OBJS)
 
 # Rule to generate object files from cpp files
 %.o: %.cpp
@@ -28,10 +34,13 @@ $(TEST_OBJ): $(TEST_SRC)
 test: $(TEST_OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $(TEST_EXEC)
 
+play:
+	hipcc $(PLAYGROUND_SRC) -o $(PLAYGROUND_EXEC) -fopenmp -Wno-unused-result
+
 # Include the dependency files
 -include $(DEPS)
 
 clean:
-	rm -f $(OBJS) $(TARGET) $(DEPS) $(TEST_OBJ) $(TEST_EXEC)
+	rm -f $(OBJS) $(EXEC) $(DEPS) $(TEST_OBJ) $(TEST_EXEC) $(PLAYGROUND_OBJ) $(PLAYGROUND_EXEC)
 
 .PHONY: all clean
