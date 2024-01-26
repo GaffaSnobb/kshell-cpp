@@ -2,6 +2,7 @@
 #include <vector>
 #include <sstream>
 #include <stdexcept>
+#include <cmath>
 
 #include "tools.hpp"
 #include "data_structures.hpp"
