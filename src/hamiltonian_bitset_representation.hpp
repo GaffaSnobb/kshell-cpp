@@ -6,7 +6,7 @@
 
 namespace hamiltonian_bitset
 {
-Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_bit_representation(const Interaction& interaction);
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_bitset_representation(const Interaction& interaction);
 }
 
 #endif
