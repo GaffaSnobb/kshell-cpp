@@ -288,7 +288,7 @@ double calculate_twobody_matrix_element_bitset_representation(
 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_bit_representation(const Interaction& interaction)
 {
     const Indices indices = indices::generate_indices(interaction);
-    const std::vector<std::bitset<n_bits_bitset>> basis_states = basis::calculate_m_basis_states_bit_representation(interaction);
+    const std::vector<std::bitset<n_bits_bitset>> basis_states = basis::calculate_m_basis_states_bitset_representation(interaction);
     const unsigned int m_dim = basis_states.size();
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
