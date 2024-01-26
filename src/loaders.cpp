@@ -10,6 +10,8 @@
 using std::cout;
 using std::endl;
 
+namespace loaders
+{
 void make_tbme_map(
     std::unordered_map<Key5, double>& tbme_map,
     std::vector<Key5>& tbme_keys,
@@ -377,3 +379,4 @@ Interaction load_interaction(
     );
     return interaction;
 }
+} // namespace loaders
