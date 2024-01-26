@@ -1,9 +1,19 @@
 #include <iostream>
 #include <vector>
 #include <type_traits>
+#include <numeric>
 
 using std::cout;
 using std::endl;
+
+template <typename T>
+void print_bit_representation(const T& value)
+{
+    static_assert(std::is_integral<T>::value, "T must be an integral type.");
+    cout << "Value: " << value << endl;
+    cout << "Number of bits: " << sizeof(T) * 8 << endl;
+    cout << "Bit representation: " << std::bitset<sizeof(T) * 8>(value) << endl;
+}
 
 template <typename T>
 void print_vector(const std::vector<T>& vec)
@@ -88,4 +98,10 @@ std::vector<T0> range(T1 start, T2 stop, T3 step)
         }
     }
     return range;
+}
+
+template <typename T>
+double mean(std::vector<T> vec)
+{
+    return std::accumulate(vec.begin(), vec.end(), 0.0)/vec.size();
 }

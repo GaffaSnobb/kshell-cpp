@@ -124,3 +124,9 @@ std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolu
     cout << name << ": " << duration.count()/1000.0 << " s" << endl;
     return duration;
 }
+long long timer(std::chrono::time_point<std::chrono::high_resolution_clock> start)
+{
+    std::chrono::time_point<std::chrono::high_resolution_clock> stop = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    return duration.count();
+}

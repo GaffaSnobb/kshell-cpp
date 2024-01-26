@@ -7,6 +7,9 @@
 #include "parameters.hpp"
 #include "data_structures.hpp"
 
+// void print_bit_representation(unsigned short state);
+template <typename T>
+void print_bit_representation(const T& value);
 void print_vector(const std::vector<std::bitset<n_bits_bitset>>& vec);
 void print_vector(const std::vector<Key5>& vec);
 template <typename T>
@@ -21,6 +24,9 @@ void print(std::vector<OrbitalParameters> orbitals);
 
 template <typename T0, typename T1, typename T2, typename T3>
 std::vector<T0> range(T1 start, T2 stop, T3 step);
+
+template <typename T>
+double mean(std::vector<T> vec);
 
 short index(const std::vector<unsigned short>& vec, const unsigned short value);
 inline short negative_one_pow(short exponent)   // Dont really know if the compiler cares about my inline... : (
@@ -133,6 +139,7 @@ inline unsigned short reset_bit_and_count_swaps(std::bitset<n_bits_bitset>& stat
 
 std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolution_clock> start, std::string name);
 std::chrono::time_point<std::chrono::high_resolution_clock> timer();
+long long timer(std::chrono::time_point<std::chrono::high_resolution_clock> start);
 
 #include "tools.tpp"
 
