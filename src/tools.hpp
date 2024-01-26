@@ -6,8 +6,11 @@
 #include <bitset>
 #include "parameters.hpp"
 #include "data_structures.hpp"
+#include "../external/eigen-3.4.0/Eigen/Dense"
 
 // void print_bit_representation(unsigned short state);
+void complete_hermitian_matrix(Eigen::MatrixXd& matrix);
+
 template <typename T>
 void print_bit_representation(const T& value);
 void print_vector(const std::vector<std::bitset<n_bits_bitset>>& vec);
@@ -75,67 +78,6 @@ inline short negative_one_pow(short exponent)   // Dont really know if the compi
 }
 
 short check_existence_and_bisect(const std::vector<unsigned short>& vec, const unsigned short value);
-
-inline unsigned short set_bit_and_count_swaps(std::bitset<n_bits_bitset>& state, unsigned short bit_to_set)
-{
-    /*
-    Set bit number `bit_to_set` and count how many bits before
-    `bit_to_set` are set / count how many operator swaps must be
-    performed to place the creation operator correctly.
-
-    We need to know how many bits before the bit we want
-    to annihilate are set. This corresponds to how many
-    times we must swap the positions of operators and
-    thus if we get a phase of +1 or -1. This is because
-    we have to make sure that the annihilation operator
-    is placed next to the creation operator it tries to
-    annihilate:
-
-        c_0 | (0, 3) > = c_0 c_0^\dagger c_3^\dagger | core >
-                        = c_3^\dagger | core >
-                        = | (3) >
-
-        c_0 | (3, 0) > = c_0 c_3^\dagger c_0^\dagger | core >
-                        = - c_0 c_0^\dagger c_3^\dagger | core >
-                        = - c_3^\dagger | core >
-                        = - | (3) >
-
-    Performance notes
-    -----------------
-    (1): for (unsigned short i = 0; i < bit_to_set; i++) if (state.test(i)) count++;
-    (2): for (unsigned short i = 0; i < bit_to_set; i++) if (state[i]) count++;
-    (3): for (unsigned short i = 0; i < bit_to_set; i++) count += state[i];    
-
-    (1) is slowest. (2) is a little bit faster than (3) at -O0. (2) and
-    (3) are approximately equally fast at -Ofast, but it might be
-    beneficial to choose (3) with regards to GPGPU because it does not
-    use `if`.
-
-    */
-    unsigned short count = 0;
-    // for (unsigned short i = 0; i < bit_to_set; i++) if (state.test(i)) count++;
-    // for (unsigned short i = 0; i < bit_to_set; i++) if (state[i]) count++;
-    for (unsigned short i = 0; i < bit_to_set; i++) count += state[i];
-    // state.set(bit_to_set);
-    state[bit_to_set] = 1;
-    return count;
-}
-
-inline unsigned short reset_bit_and_count_swaps(std::bitset<n_bits_bitset>& state, unsigned short bit_to_reset)
-{
-    /*
-    Reset bit number `bit_to_reset` and count how many bits before
-    `bit_to_reset` are set / count how many operator swaps must be
-    performed to place the annihilation operator correctly.
-    */
-    unsigned short count = 0;
-    // for (unsigned short i = 0; i < bit_to_reset; i++) if (state.test(i)) count++;
-    // for (unsigned short i = 0; i < bit_to_reset; i++) if (state[i]) count++;
-    for (unsigned short i = 0; i < bit_to_reset; i++) count += state[i];
-    // state.reset(bit_to_reset);
-    state[bit_to_reset] = 0;
-    return count;
-}
 
 std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolution_clock> start, std::string name);
 std::chrono::time_point<std::chrono::high_resolution_clock> timer();

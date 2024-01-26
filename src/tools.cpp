@@ -5,6 +5,7 @@
 #include "parameters.hpp"
 #include "tools.hpp"
 #include "data_structures.hpp"
+#include "../external/eigen-3.4.0/Eigen/Dense"
 
 using std::cout;
 using std::endl;
@@ -20,6 +21,32 @@ using std::endl;
 //     for (int i = 15; i >= 0; --i) cout << bits[i] << " ";
 //     cout << endl;
 // }
+
+// void complete_hermitian_matrix(Eigen::MatrixXcd& matrix) // For complex values.
+void complete_hermitian_matrix(Eigen::MatrixXd& matrix)
+{
+    /*
+    Copies the values from the upper triangle to the lower triangle.
+    Does not copy the diagonal.
+
+    This function will probably be removed soon since its not really
+    necessary to explicitly store the other triangle when we know that
+    the matrix is Hermitian.
+    */
+    auto start = timer();
+    int rows = matrix.rows();
+    int cols = matrix.cols();
+
+    for (int row_idx = 0; row_idx < rows; row_idx++)
+    {
+        for (int col_idx = row_idx + 1; col_idx < cols; col_idx++)
+        {
+            // matrix(col_idx, row_idx) = std::conj(matrix(row_idx, col_idx));  // For complex values.
+            matrix(col_idx, row_idx) = matrix(row_idx, col_idx);
+        }
+    }
+    timer(start, "complete_hermitian_matrix");
+}
 
 void print(std::vector<OrbitalParameters> orbitals)
 {
@@ -124,6 +151,7 @@ std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolu
     cout << name << ": " << duration.count()/1000.0 << " s" << endl;
     return duration;
 }
+
 long long timer(std::chrono::time_point<std::chrono::high_resolution_clock> start)
 {
     std::chrono::time_point<std::chrono::high_resolution_clock> stop = std::chrono::high_resolution_clock::now();
