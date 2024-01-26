@@ -295,9 +295,13 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_primiti
     const Indices indices = indices::generate_indices(interaction);
     const std::vector<unsigned long long> basis_states = basis::calculate_m_basis_states_primitive_bit_representation(interaction);
     const unsigned int m_dim = basis_states.size();
+    cout << "---------------------" << endl;
+    print("n_valence_protons", interaction.model_space_protons.n_valence_nucleons);
+    print("n_valence_neutrons", interaction.model_space_neutrons.n_valence_nucleons);
     print("m_dim", m_dim);
     print("m_dim**2", m_dim*m_dim);
     print("H size (MB): ", m_dim*m_dim*sizeof(double)/1000./1000.);
+    cout << "---------------------" << endl;
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
     H.resize(m_dim, m_dim);
