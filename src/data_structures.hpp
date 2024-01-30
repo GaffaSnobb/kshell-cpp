@@ -185,6 +185,7 @@ struct Indices
     const std::vector<short> composite_m_idx_to_m_map;
     const std::vector<unsigned short> orbital_idx_to_j_map;
     const std::vector<std::vector<unsigned short>> orbital_idx_to_composite_m_idx_map;
+    const unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices; // End index of each section.
     const std::vector<unsigned short> creation_orb_indices_0;
     const std::vector<unsigned short> creation_orb_indices_1;
     const std::vector<unsigned short> annihilation_orb_indices_0;
@@ -197,6 +198,7 @@ struct Indices
         std::vector<short> composite_m_idx_to_m_map_,
         std::vector<unsigned short> orbital_idx_to_j_map_,
         std::vector<std::vector<unsigned short>> orbital_idx_to_composite_m_idx_map_,
+        unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices_,
         std::vector<unsigned short> creation_orb_indices_0_,
         std::vector<unsigned short> creation_orb_indices_1_,
         std::vector<unsigned short> annihilation_orb_indices_0_,
@@ -208,6 +210,7 @@ struct Indices
     composite_m_idx_to_m_map(composite_m_idx_to_m_map_),
     orbital_idx_to_j_map(orbital_idx_to_j_map_),
     orbital_idx_to_composite_m_idx_map(orbital_idx_to_composite_m_idx_map_),
+    orbital_idx_to_composite_m_idx_map_flattened_indices(orbital_idx_to_composite_m_idx_map_flattened_indices_),
     creation_orb_indices_0(creation_orb_indices_0_),
     creation_orb_indices_1(creation_orb_indices_1_),
     annihilation_orb_indices_0(annihilation_orb_indices_0_),
@@ -215,7 +218,12 @@ struct Indices
     j_coupled(j_coupled_),
     m_coupled(m_coupled_),
     tbme(tbme_) {}
-};
+
+    ~Indices()
+    {
+        delete[] orbital_idx_to_composite_m_idx_map_flattened_indices;
+    }
+};  // Indices
 
 struct OrbitalParameters
 {
@@ -260,6 +268,7 @@ struct Interaction
     const double tbme_mass_dependence_exponent;
     const double tbme_mass_dependence_denominator;
     const std::vector<double> spe;    // Single-particle energies. The orbital to which they belong is the same as the index of the SPE.
+    const double* spe_array;
     const ModelSpace model_space;
     const ModelSpace model_space_protons;
     const ModelSpace model_space_neutrons;
@@ -274,6 +283,7 @@ struct Interaction
         double tbme_mass_dependence_exponent_,
         double tbme_mass_dependence_denominator_,
         std::vector<double> spe_,
+        double* spe_array_,
         ModelSpace model_space_,
         ModelSpace model_space_protons_,
         ModelSpace model_space_neutrons_,
@@ -287,11 +297,17 @@ struct Interaction
     tbme_mass_dependence_exponent(tbme_mass_dependence_exponent_),
     tbme_mass_dependence_denominator(tbme_mass_dependence_denominator_),
     spe(spe_),
+    spe_array(spe_array_),
     model_space(model_space_),
     model_space_protons(model_space_protons_),
     model_space_neutrons(model_space_neutrons_),
     tbme_map(tbme_map_),
     tbme_keys(tbme_keys_) {}
+
+    ~Interaction()
+    {
+        delete[] spe_array;
+    }
 };
 
 #endif // DATA_STRUCTURES_HPP
