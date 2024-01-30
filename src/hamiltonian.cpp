@@ -20,6 +20,51 @@ using std::endl;
 
 namespace hamiltonian
 {
+double calculate_onebody_matrix_element_primitive_bit_representation_gpu(
+    const unsigned short n_orbitals,
+    const double* spe,
+    const unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices,
+    const unsigned long long& left_state,
+    const unsigned long long& right_state
+)
+{
+    double onebody_res = 0;
+    unsigned short creation_start_m_idx = 0;
+    unsigned short annihilation_start_m_idx = 0;
+    
+    for (unsigned short creation_and_annihilation_orb_idx = 0; creation_and_annihilation_orb_idx < n_orbitals; creation_and_annihilation_orb_idx++)
+    {
+        const unsigned short creation_end_m_idx = orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
+        const unsigned short annihilation_end_m_idx = orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
+
+        for (unsigned short creation_comp_m_idx = creation_start_m_idx; creation_comp_m_idx < creation_end_m_idx; creation_comp_m_idx++)
+        {
+            for (unsigned short annihilation_comp_m_idx = annihilation_start_m_idx; annihilation_comp_m_idx < annihilation_end_m_idx; annihilation_comp_m_idx++)
+            {
+                double switch_ = 1; // To eliminate if-statements.
+                unsigned long long new_right_state = right_state;   // The contents of right_state is copied, not referenced.
+
+                // switch_ = switch_*bittools::is_bit_set(new_right_state, annihilation_comp_m_idx);
+                if (not bittools::is_bit_set(new_right_state, annihilation_comp_m_idx)) continue;
+                const unsigned short n_operator_swaps_annihilation = bittools::reset_bit_and_count_swaps(new_right_state, annihilation_comp_m_idx);
+                const short annihilation_sign = negative_one_pow(n_operator_swaps_annihilation);
+
+                // switch_ = switch_*(not bittools::is_bit_set(new_right_state, creation_comp_m_idx));
+                if (bittools::is_bit_set(new_right_state, creation_comp_m_idx)) continue;
+                const unsigned short n_operator_swaps_creation = bittools::set_bit_and_count_swaps(new_right_state, creation_comp_m_idx);
+                const short creation_sign = negative_one_pow(n_operator_swaps_creation);
+
+                // switch_ = switch_*(left_state == new_right_state);
+                if (left_state != new_right_state) continue;
+                onebody_res += annihilation_sign*creation_sign*spe[creation_and_annihilation_orb_idx]*switch_;   // Or annihilation_orb_idx, they are the same.
+            }
+        }
+        annihilation_start_m_idx = annihilation_end_m_idx; // Update annihilation_start_m_idx to the beginning of the next section of the map.
+        creation_start_m_idx = creation_end_m_idx; // Update creation_start_m_idx to the beginning of the next section of the map.
+    }
+    return onebody_res;
+}
+
 double calculate_onebody_matrix_element_primitive_bit_representation(
     const Interaction& interaction,
     const Indices& indices,
@@ -307,6 +352,10 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_primiti
     H.resize(m_dim, m_dim);
     H.setZero();
 
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H_test;
+    H_test.resize(m_dim, m_dim);
+    H_test.setZero();
+
     auto start = timer();
     for (unsigned int left_idx = 0; left_idx < m_dim; left_idx++)
     {
@@ -316,14 +365,57 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_primiti
             Calculate only the upper triangle of the Hamiltonian matrix.
             H is hermitian so we dont have to calculate both triangles.
             */
-            H(left_idx, right_idx) += calculate_onebody_matrix_element_primitive_bit_representation(
-                interaction,
-                indices,
+            // H(left_idx, right_idx) += calculate_onebody_matrix_element_primitive_bit_representation(
+            //     interaction,
+            //     indices,
+            //     basis_states[left_idx],
+            //     basis_states[right_idx]
+            // );
+            H_test(left_idx, right_idx) += calculate_onebody_matrix_element_primitive_bit_representation_gpu(
+                interaction.model_space.n_orbitals,
+                interaction.spe_array,
+                indices.orbital_idx_to_composite_m_idx_map_flattened_indices,
                 basis_states[left_idx],
                 basis_states[right_idx]
             );
         }
     }
+
+    // cout << H << endl;
+    // cout << "\n" << endl;
+    // cout << H_test << endl;
+    cout << "(H_test == H): " << (H_test == H) << endl;
+
+    // for (int i = 0; i < interaction.model_space.n_orbitals; i++)
+    // {
+    //     cout << indices.orbital_idx_to_composite_m_idx_map_flattened_indices[i] << ", ";
+    // }
+    // cout << endl;
+
+    // unsigned short prev_idx = 0;
+    // for (int i = 0; i < interaction.model_space.n_orbitals; i++)
+    // {
+    //     const unsigned short current_idx = indices.orbital_idx_to_composite_m_idx_map_flattened_indices[i];
+    //     for (int j = prev_idx; j < current_idx; j++)
+    //     {
+    //         cout << j << ", ";
+    //     }
+    //     cout << endl;
+    //     prev_idx = current_idx;
+    // }
+
+    return H;
+
+
+
+
+
+
+
+
+
+
+
     timer(start, "calculate_onebody_matrix_element_bit_representation");
     start = timer();
     int thread_id = omp_get_thread_num();
