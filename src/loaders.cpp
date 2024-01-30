@@ -244,6 +244,8 @@ Interaction load_interaction(
         }
     }
 
+    double* spe_array = new double[n_spe];
+
     for (int i = 0; i < n_spe; i++)
     {
         /*
@@ -264,6 +266,7 @@ Interaction load_interaction(
         double spe_tmp;
         iss >> _ >> _ >> spe_tmp;
         spe.push_back(spe_tmp);
+        spe_array[i] = spe_tmp;
     }
     
     std::getline(infile, line);
@@ -371,6 +374,7 @@ Interaction load_interaction(
         tbme_mass_dependence_exponent,
         tbme_mass_dependence_denominator,
         spe,
+        spe_array,
         model_space,
         model_space_protons,
         model_space_neutrons,
