@@ -91,7 +91,7 @@ inline void set_bit(unsigned long long &state, unsigned short bit_to_set)
     state |= (1ULL << bit_to_set);
 }
 
-inline bool is_bit_set(unsigned long long state, int bit_to_check)
+inline bool is_bit_set(unsigned long long state, unsigned short bit_to_check)
 {
     /*
     Check if a specific bit is set.
