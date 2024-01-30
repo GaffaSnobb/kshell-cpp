@@ -12,8 +12,10 @@ const Indices generate_indices(const Interaction& interaction)
     auto start = timer();
     std::vector<unsigned short> orbital_idx_to_j_map;
     std::vector<std::vector<unsigned short>> orbital_idx_to_composite_m_idx_map;
+    unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices = new unsigned short[interaction.model_space.orbitals.size()]; // End index of each map section.
     unsigned short previous_degeneracy = 0;
-
+    unsigned short previous_size = 0;
+    
     for (int i = 0; i < interaction.model_space.orbitals.size(); i++)
     {   
         unsigned short j = interaction.model_space.orbitals[i].j;
@@ -28,7 +30,21 @@ const Indices generate_indices(const Interaction& interaction)
             )
         );
         previous_degeneracy = current_degeneracy + previous_degeneracy;
+
+        /*
+        Make a flattened orbital index -> m-substate index array which
+        stores only the end index of the current map. Since the
+        m-substate indices are in increasing order and incremeted by 1,
+        there is no need to explicitly store all the numbers. The
+        flattened array is used for passing the index mapping to a GPU
+        kernel.
+        */
+        unsigned short current_size = orbital_idx_to_composite_m_idx_map[i].size();
+        orbital_idx_to_composite_m_idx_map_flattened_indices[i] = current_size + previous_size;
+
+        previous_size = previous_size + current_size;
     }
+
     std::vector<unsigned short> creation_orb_indices_0;
     std::vector<unsigned short> creation_orb_indices_1;
     std::vector<unsigned short> annihilation_orb_indices_0;
@@ -117,6 +133,7 @@ const Indices generate_indices(const Interaction& interaction)
         interaction.model_space.all_jz_values,
         orbital_idx_to_j_map,
         orbital_idx_to_composite_m_idx_map,
+        orbital_idx_to_composite_m_idx_map_flattened_indices,
         creation_orb_indices_0,
         creation_orb_indices_1,
         annihilation_orb_indices_0,
