@@ -7,6 +7,5 @@
 namespace hamiltonian
 {
 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_primitive_bit_representation(const Interaction& interaction);
-void create_hamiltonian_device_dispatcher(const Interaction& interaction);
 }
 #endif
