@@ -8,17 +8,17 @@ namespace bittools
 {
 inline unsigned short reset_bit_and_count_swaps(unsigned long long& state, const unsigned short bit_to_reset)
 {
-    unsigned long long mask = (1ULL << bit_to_reset) - 1;   // Create a mask for all bits before the bit_to_reset.
-    int count = __builtin_popcountll(state & mask);         // Count set bits before the bit_to_reset.
-    state &= ~(1ULL << bit_to_reset);                       // Reset the bit at bit_to_reset.
+    const unsigned long long mask = (1ULL << bit_to_reset) - 1;   // Create a mask for all bits before the bit_to_reset.
+    const int count = __builtin_popcountll(state & mask);         // Count set bits before the bit_to_reset.
+    state &= ~(1ULL << bit_to_reset);                             // Reset the bit at bit_to_reset.
     return count;
 }
 
 inline unsigned short set_bit_and_count_swaps(unsigned long long& state, const unsigned short bit_to_set)
 {
-    unsigned long long mask = (1ULL << bit_to_set) - 1; // Create a mask for all bits before the bit_to_set.
-    int count = __builtin_popcountll(state & mask);     // Count set bits before the bit_to_set.
-    state |= (1ULL << bit_to_set);                      // Set the bit at bit_to_set.
+    const unsigned long long mask = (1ULL << bit_to_set) - 1;   // Create a mask for all bits before the bit_to_set.
+    const int count = __builtin_popcountll(state & mask);       // Count set bits before the bit_to_set.
+    state |= (1ULL << bit_to_set);                              // Set the bit at bit_to_set.
     return count;
 }
 
