@@ -98,7 +98,7 @@ double calculate_onebody_matrix_element_bitset_representation(
                 }
 
                 const unsigned short n_operator_swaps_annihilation = bittools::reset_bit_and_count_swaps(new_right_state, annihilation_comp_m_idx);
-                const short annihilation_sign = negative_one_pow(n_operator_swaps_annihilation);
+                const short annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation);
                 
                 // if (new_right_state.test(creation_comp_m_idx))
                 if (new_right_state[creation_comp_m_idx])
@@ -111,7 +111,7 @@ double calculate_onebody_matrix_element_bitset_representation(
                     continue;
                 }
                 const unsigned short n_operator_swaps_creation = bittools::set_bit_and_count_swaps(new_right_state, creation_comp_m_idx);
-                const short creation_sign = negative_one_pow(n_operator_swaps_creation);
+                const short creation_sign = bittools::negative_one_pow(n_operator_swaps_creation);
 
                 if (left_state != new_right_state)
                 {
@@ -205,12 +205,12 @@ double calculate_twobody_matrix_element_bitset_representation(
 
                 std::bitset<n_bits_bitset> new_right_state_annihilation = right_state;
                 const unsigned short n_operator_swaps_annihilation_0 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_0);
-                short annihilation_sign = negative_one_pow(n_operator_swaps_annihilation_0);
+                short annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation_0);
 
                 // if (not new_right_state_annihilation.test(annihilation_comp_m_idx_1)) continue;
                 if (not new_right_state_annihilation[annihilation_comp_m_idx_1]) continue;
                 const unsigned short n_operator_swaps_annihilation_1 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
-                annihilation_sign *= negative_one_pow(n_operator_swaps_annihilation_1);
+                annihilation_sign *= bittools::negative_one_pow(n_operator_swaps_annihilation_1);
 
                 const Key6 annihilation_key = {
                     indices.orbital_idx_to_j_map[annihilation_orb_idx_0],
@@ -252,14 +252,14 @@ double calculate_twobody_matrix_element_bitset_representation(
                         
                         std::bitset<n_bits_bitset> new_right_state_creation = new_right_state_annihilation;
                         const unsigned short n_operator_swaps_creation_1 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_1);
-                        short creation_sign = negative_one_pow(n_operator_swaps_creation_1);
+                        short creation_sign = bittools::negative_one_pow(n_operator_swaps_creation_1);
 
                         // if (new_right_state_annihilation.test(creation_comp_m_idx_0)) continue;
                         if (new_right_state_annihilation[creation_comp_m_idx_0]) continue;
                         // creation_res_switch *= (not new_right_state_annihilation[creation_comp_m_idx_0]);
                         
                         const unsigned short n_operator_swaps_creation_0 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_0);
-                        creation_sign *= negative_one_pow(n_operator_swaps_creation_0);
+                        creation_sign *= bittools::negative_one_pow(n_operator_swaps_creation_0);
 
                         if (left_state != new_right_state_creation) continue;
                         // creation_res_switch *= (left_state == new_right_state_creation);
