@@ -6,7 +6,7 @@
 
 namespace bittools
 {
-inline unsigned short reset_bit_and_count_swaps(unsigned long long& state, unsigned short bit_to_reset)
+inline unsigned short reset_bit_and_count_swaps(unsigned long long& state, const unsigned short bit_to_reset)
 {
     unsigned long long mask = (1ULL << bit_to_reset) - 1;   // Create a mask for all bits before the bit_to_reset.
     int count = __builtin_popcountll(state & mask);         // Count set bits before the bit_to_reset.
@@ -14,7 +14,7 @@ inline unsigned short reset_bit_and_count_swaps(unsigned long long& state, unsig
     return count;
 }
 
-inline unsigned short set_bit_and_count_swaps(unsigned long long& state, unsigned short bit_to_set)
+inline unsigned short set_bit_and_count_swaps(unsigned long long& state, const unsigned short bit_to_set)
 {
     unsigned long long mask = (1ULL << bit_to_set) - 1; // Create a mask for all bits before the bit_to_set.
     int count = __builtin_popcountll(state & mask);     // Count set bits before the bit_to_set.
@@ -22,7 +22,7 @@ inline unsigned short set_bit_and_count_swaps(unsigned long long& state, unsigne
     return count;
 }
 
-inline unsigned short set_bit_and_count_swaps(std::bitset<n_bits_bitset>& state, unsigned short bit_to_set)
+inline unsigned short set_bit_and_count_swaps(std::bitset<n_bits_bitset>& state, const unsigned short bit_to_set)
 {
     /*
     Set bit number `bit_to_set` and count how many bits before
@@ -67,7 +67,7 @@ inline unsigned short set_bit_and_count_swaps(std::bitset<n_bits_bitset>& state,
     return count;
 }
 
-inline unsigned short reset_bit_and_count_swaps(std::bitset<n_bits_bitset>& state, unsigned short bit_to_reset)
+inline unsigned short reset_bit_and_count_swaps(std::bitset<n_bits_bitset>& state, const unsigned short bit_to_reset)
 {
     /*
     Reset bit number `bit_to_reset` and count how many bits before
@@ -83,7 +83,7 @@ inline unsigned short reset_bit_and_count_swaps(std::bitset<n_bits_bitset>& stat
     return count;
 }
 
-inline void set_bit(unsigned long long &state, unsigned short bit_to_set)
+inline void set_bit(unsigned long long &state, const unsigned short bit_to_set)
 {
     /*
     Sets a specific bit in an unsigned long long number.
@@ -91,7 +91,7 @@ inline void set_bit(unsigned long long &state, unsigned short bit_to_set)
     state |= (1ULL << bit_to_set);
 }
 
-inline bool is_bit_set(unsigned long long state, unsigned short bit_to_check)
+inline bool is_bit_set(const unsigned long long state, const unsigned short bit_to_check)
 {
     /*
     Check if a specific bit is set.
