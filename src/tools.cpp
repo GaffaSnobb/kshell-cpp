@@ -9,18 +9,6 @@
 
 using std::cout;
 using std::endl;
-// using std::chrono::high_resolution_clock;
-// using std::chrono::duration_cast;
-// using std::chrono::milliseconds;
-
-// void print_bit_representation(unsigned short state)
-// {
-//     cout << "value: " << state << endl;
-//     std::bitset<16> bits(state);
-//     cout << "bits: ";
-//     for (int i = 15; i >= 0; --i) cout << bits[i] << " ";
-//     cout << endl;
-// }
 
 // void complete_hermitian_matrix(Eigen::MatrixXcd& matrix) // For complex values.
 void complete_hermitian_matrix(Eigen::MatrixXd& matrix)
