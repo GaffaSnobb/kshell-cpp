@@ -76,6 +76,11 @@ void print_vector(const std::vector<Key5>& vec)
     }
 }
 
+void print(const Key6& key)
+{
+    cout << "{" << key.j1 << ", " << key.m1 << ", " << key.j2 << ", " << key.m2 << ", " << key.J << ", " << key.M << "}," << endl;
+}
+
 short index(const std::vector<unsigned short>& vec, const unsigned short value)
 {
     /*

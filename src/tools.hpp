@@ -13,6 +13,7 @@ void complete_hermitian_matrix(Eigen::MatrixXd& matrix);
 template <typename T>
 void print_bit_representation(const T& value);
 void print_vector(const std::vector<std::bitset<n_bits_bitset>>& vec);
+void print(const Key6& key);
 void print_vector(const std::vector<Key5>& vec);
 template <typename T>
 void print_vector(const std::vector<T>& vec);
