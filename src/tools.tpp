@@ -6,6 +6,13 @@
 using std::cout;
 using std::endl;
 
+template <typename T1, typename T2>
+bool compare_arrays(T1* arr1, T1* arr2, T2 size)
+{
+    for (int i = 0; i < size; i++) if (arr1[i] != arr2[i]) return false;
+    return true;
+}
+
 template <typename T>
 void print_bit_representation(const T& value)
 {

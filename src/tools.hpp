@@ -32,6 +32,8 @@ short check_existence_and_bisect(const std::vector<unsigned short>& vec, const u
 std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolution_clock> start, std::string name);
 std::chrono::time_point<std::chrono::high_resolution_clock> timer();
 long long timer(std::chrono::time_point<std::chrono::high_resolution_clock> start);
+template <typename T1, typename T2>
+bool compare_arrays(T1* arr1, T1* arr2, T2 size);
 
 #include "tools.tpp"
 #endif // TOOLS_HPP
