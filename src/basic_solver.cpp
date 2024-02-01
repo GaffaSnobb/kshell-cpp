@@ -14,8 +14,8 @@
 #include "hamiltonian_bitset_representation.hpp"
 #include "diagnostics.hpp"
 // #include "../external/cppitertools/combinations.hpp"
-// #include "../external/eigen-3.4.0/Eigen/Dense"
-// #include "../external/eigen-3.4.0/Eigen/Eigenvalues"
+#include "../external/eigen-3.4.0/Eigen/Dense"
+#include "../external/eigen-3.4.0/Eigen/Eigenvalues"
 // #include "../external/boost_1_84_0/boost/container_hash/hash.hpp"
 
 using std::cout;
@@ -28,12 +28,12 @@ int main(int argc, char* argv[])
     std::string interaction_filename = "../snt/w.snt";
     
     const Interaction interaction = loaders::load_interaction(interaction_filename, n_valence_protons, n_valence_neutrons);
-    diagnostics::print_hamiltonian_info(interaction);
     const Indices indices = indices::generate_indices(interaction);
-    const unsigned int m_dim = interaction.basis_states.size();
+    diagnostics::print_hamiltonian_info(interaction);
+    int m_dim = interaction.basis_states.size();
 
-    double* H_device = new double[m_dim*m_dim];
-    for (int idx = 0; idx < m_dim*m_dim; idx++) H_device[idx] = 0; // Not needed for the calculation, using this so that printing H is less cluttered.
+    double* H_host_reference = new double[m_dim*m_dim];
+    for (int idx = 0; idx < m_dim*m_dim; idx++) H_host_reference[idx] = 0; // Not needed for the calculation, using this so that printing H is less cluttered.
 
     double* H_host = new double[m_dim*m_dim];
     for (int idx = 0; idx < m_dim*m_dim; idx++) H_host[idx] = 0; // Not needed for the calculation, using this so that printing H is less cluttered.
@@ -42,16 +42,21 @@ int main(int argc, char* argv[])
     for (int i = 0; i < 1; i++)
     {
         auto start = timer();
-        
+        hamiltonian::create_hamiltonian_primitive_bit_representation_tmp(interaction, indices, H_host_reference);
         hamiltonian::create_hamiltonian_primitive_bit_representation(interaction, indices, H_host);
-        hamiltonian_device::create_hamiltonian_device_dispatcher(interaction, indices, H_device);
+        // hamiltonian_device::create_hamiltonian_device_dispatcher(interaction, indices, H_device);
         timing.push_back(timer(start, "main").count());
     }
     print_vector(timing);
     cout << mean(timing) << endl;
-    cout << "H_device == H_host: " << compare_arrays(H_device, H_host, m_dim*m_dim) << endl;
+    cout << "H_host_reference == H_host: " << compare_arrays(H_host_reference, H_host, m_dim*m_dim) << endl;
+
+    // print_flattened_2d_array(H_host, m_dim);
+    // Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> H_host_mapped(H_host, m_dim, m_dim);
+    // Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(H_host_mapped.transpose());
+    // std::cout << "Eigenvalues:\n" << solver.eigenvalues() << std::endl;
     
-    delete[] H_device;
+    delete[] H_host_reference;
     delete[] H_host;
     return 0;
 }

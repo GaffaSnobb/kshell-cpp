@@ -424,7 +424,7 @@ void create_hamiltonian_primitive_bit_representation(const Interaction& interact
         #pragma omp parallel for
         for (int col_idx = row_idx; col_idx < m_dim; col_idx++)
         {    
-            H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation(
+            H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation_new(
                 interaction,
                 indices,
                 interaction.basis_states[row_idx],
