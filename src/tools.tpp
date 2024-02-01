@@ -7,6 +7,20 @@ using std::cout;
 using std::endl;
 
 template <typename T1, typename T2>
+void print_flattened_2d_array(T1* arr, T2 size)
+{
+    for (int row_idx = 0; row_idx < size; row_idx++)
+    {
+        for (int col_idx = 0; col_idx < size; col_idx++)
+        {
+            cout << arr[row_idx*size + col_idx] << ", ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+template <typename T1, typename T2>
 bool compare_arrays(T1* arr1, T1* arr2, T2 size)
 {
     for (int i = 0; i < size; i++) if (arr1[i] != arr2[i]) return false;
