@@ -22,51 +22,6 @@ using std::endl;
 
 namespace hamiltonian
 {
-double calculate_onebody_matrix_element_primitive_bit_representation_gpu(
-    const unsigned short n_orbitals,
-    const double* spe,
-    const unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices,
-    const unsigned long long& left_state,
-    const unsigned long long& right_state
-)
-{
-    double onebody_res = 0;
-    unsigned short creation_start_m_idx = 0;
-    unsigned short annihilation_start_m_idx = 0;
-    
-    for (unsigned short creation_and_annihilation_orb_idx = 0; creation_and_annihilation_orb_idx < n_orbitals; creation_and_annihilation_orb_idx++)
-    {
-        const unsigned short creation_end_m_idx = orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
-        const unsigned short annihilation_end_m_idx = orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
-
-        for (unsigned short creation_comp_m_idx = creation_start_m_idx; creation_comp_m_idx < creation_end_m_idx; creation_comp_m_idx++)
-        {
-            for (unsigned short annihilation_comp_m_idx = annihilation_start_m_idx; annihilation_comp_m_idx < annihilation_end_m_idx; annihilation_comp_m_idx++)
-            {
-                double switch_ = 1; // To eliminate if-statements.
-                unsigned long long new_right_state = right_state;   // The contents of right_state is copied, not referenced.
-
-                // switch_ = switch_*bittools::is_bit_set(new_right_state, annihilation_comp_m_idx);
-                if (not bittools::is_bit_set(new_right_state, annihilation_comp_m_idx)) continue;
-                const unsigned short n_operator_swaps_annihilation = bittools::reset_bit_and_count_swaps(new_right_state, annihilation_comp_m_idx);
-                const short annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation);
-
-                // switch_ = switch_*(not bittools::is_bit_set(new_right_state, creation_comp_m_idx));
-                if (bittools::is_bit_set(new_right_state, creation_comp_m_idx)) continue;
-                const unsigned short n_operator_swaps_creation = bittools::set_bit_and_count_swaps(new_right_state, creation_comp_m_idx);
-                const short creation_sign = bittools::negative_one_pow(n_operator_swaps_creation);
-
-                // switch_ = switch_*(left_state == new_right_state);
-                if (left_state != new_right_state) continue;
-                onebody_res += annihilation_sign*creation_sign*spe[creation_and_annihilation_orb_idx]*switch_;   // Or annihilation_orb_idx, they are the same.
-            }
-        }
-        annihilation_start_m_idx = annihilation_end_m_idx; // Update annihilation_start_m_idx to the beginning of the next section of the map.
-        creation_start_m_idx = creation_end_m_idx; // Update creation_start_m_idx to the beginning of the next section of the map.
-    }
-    return onebody_res;
-}
-
 double calculate_onebody_matrix_element_primitive_bit_representation(
     const Interaction& interaction,
     const Indices& indices,
@@ -337,129 +292,68 @@ double calculate_twobody_matrix_element_primitive_bit_representation(
     return twobody_res;
 }
 
-Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_primitive_bit_representation(const Interaction& interaction)
+void create_hamiltonian_primitive_bit_representation(const Interaction& interaction, const Indices& indices, double* H)
 {
-    const Indices indices = indices::generate_indices(interaction);
-    const std::vector<unsigned long long> basis_states = basis::calculate_m_basis_states_primitive_bit_representation(interaction);
-    const unsigned int m_dim = basis_states.size();
-    cout << "---------------------" << endl;
-    print("n_valence_protons", interaction.model_space_protons.n_valence_nucleons);
-    print("n_valence_neutrons", interaction.model_space_neutrons.n_valence_nucleons);
-    print("m_dim", m_dim);
-    print("m_dim**2", m_dim*m_dim);
-    print("H size (MB): ", m_dim*m_dim*sizeof(double)/1000./1000.);
-    cout << "---------------------" << endl;
-
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H;
-    H.resize(m_dim, m_dim);
-    H.setZero();
-
-    // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H_test;
-    // H_test.resize(m_dim, m_dim);
-    // H_test.setZero();
+    const unsigned int m_dim = interaction.basis_states.size();
 
     auto start = timer();
-    for (unsigned int left_idx = 0; left_idx < m_dim; left_idx++)
+    #pragma omp parallel for
+    for (unsigned int idx = 0; idx < m_dim; idx++)
     {
-        #pragma omp parallel for
-        for (unsigned int right_idx = left_idx; right_idx < m_dim; right_idx++)
-        {
-            /*
-            Calculate only the upper triangle of the Hamiltonian matrix.
-            H is hermitian so we dont have to calculate both triangles.
-            */
-            // H(left_idx, right_idx) += calculate_onebody_matrix_element_primitive_bit_representation(
-            //     interaction,
-            //     indices,
-            //     basis_states[left_idx],
-            //     basis_states[right_idx]
-            // );
-            H(left_idx, right_idx) += calculate_onebody_matrix_element_primitive_bit_representation_gpu(
-                interaction.model_space.n_orbitals,
-                interaction.spe_array,
-                indices.orbital_idx_to_composite_m_idx_map_flattened_indices,
-                basis_states[left_idx],
-                basis_states[right_idx]
-            );
-        }
+        /*
+        As long as the single-particle energies are defined only when
+        \alpha = \beta, then we only need to calculate the diagonal
+        elements.
+        */
+        H[idx*m_dim + idx] = calculate_onebody_matrix_element_primitive_bit_representation(
+            interaction,
+            indices,
+            interaction.basis_states[idx],
+            interaction.basis_states[idx]
+        );
     }
+    timer(start, "[HOST] one-body calc time");
 
-    // cout << H << endl;
-    // cout << "\n" << endl;
-    // cout << H_test << endl;
-    // cout << "(H_test == H): " << (H_test == H) << endl;
+    // timer(start, "calculate_onebody_matrix_element_bit_representation");
+    // start = timer();
+    // int thread_id = omp_get_thread_num();
+    // std::vector<long long> loop_timings;
+    // auto loop_timer = timer();
 
-    // for (int i = 0; i < interaction.model_space.n_orbitals; i++)
-    // {
-    //     cout << indices.orbital_idx_to_composite_m_idx_map_flattened_indices[i] << ", ";
-    // }
-    // cout << endl;
-
-    // unsigned short prev_idx = 0;
-    // for (int i = 0; i < interaction.model_space.n_orbitals; i++)
-    // {
-    //     const unsigned short current_idx = indices.orbital_idx_to_composite_m_idx_map_flattened_indices[i];
-    //     for (int j = prev_idx; j < current_idx; j++)
-    //     {
-    //         cout << j << ", ";
-    //     }
-    //     cout << endl;
-    //     prev_idx = current_idx;
-    // }
-
-    return H;
-
-
-
-
-
-
-
-
-
-
-
-    timer(start, "calculate_onebody_matrix_element_bit_representation");
-    start = timer();
-    int thread_id = omp_get_thread_num();
-    std::vector<long long> loop_timings;
-    auto loop_timer = timer();
-
-    // #pragma omp parallel for //num_threads(6)
-    // for (int left_idx : tq::trange(m_dim))
-    for (unsigned int left_idx = 0; left_idx < m_dim; left_idx++)
-    {   
-        if (thread_id == 0) loop_timer = timer();
+    // // #pragma omp parallel for //num_threads(6)
+    // // for (int left_idx : tq::trange(m_dim))
+    // for (unsigned int left_idx = 0; left_idx < m_dim; left_idx++)
+    // {   
+    //     if (thread_id == 0) loop_timer = timer();
         
-        #pragma omp parallel for
-        for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
-        {    
-            H(left_idx, right_idx) += calculate_twobody_matrix_element_primitive_bit_representation(
-                interaction,
-                indices,
-                basis_states[left_idx],
-                basis_states[right_idx]
-            );
-        }
-        if (thread_id == 0)
-        {
-            loop_timings.push_back(timer(loop_timer));
-            double mean_time = mean(loop_timings)/1000;
-            int num_threads = omp_get_num_threads();
+    //     #pragma omp parallel for
+    //     for (int right_idx = left_idx; right_idx < m_dim; right_idx++)
+    //     {    
+    //         H(left_idx, right_idx) += calculate_twobody_matrix_element_primitive_bit_representation(
+    //             interaction,
+    //             indices,
+    //             interaction.basis_states[left_idx],
+    //             interaction.basis_states[right_idx]
+    //         );
+    //     }
+    //     if (thread_id == 0)
+    //     {
+    //         loop_timings.push_back(timer(loop_timer));
+    //         double mean_time = mean(loop_timings)/1000;
+    //         int num_threads = omp_get_num_threads();
             
-            cout << "\r[" << left_idx << " of ≈ " << (double)m_dim/num_threads << "]";
-            cout << " [loop time: ";
-            cout << std::setfill(' ') << std::setw(5) << loop_timings.back()/1000. << " s";
-            cout << " - mean loop time: ";
-            cout << std::setfill(' ') << std::setw(10) << mean_time << " s]";
-            cout << " [est. time left: ";
-            cout << std::setfill(' ') << std::setw(10) << (m_dim - (left_idx + 1))*mean_time << " s]" << std::flush;
-        }
-    }
-    cout << endl;   // For the progress bar.
-    timer(start, "calculate_twobody_matrix_element_bit_representation");
-    complete_hermitian_matrix(H);    
-    return H;
+    //         cout << "\r[" << left_idx << " of ≈ " << (double)m_dim/num_threads << "]";
+    //         cout << " [loop time: ";
+    //         cout << std::setfill(' ') << std::setw(5) << loop_timings.back()/1000. << " s";
+    //         cout << " - mean loop time: ";
+    //         cout << std::setfill(' ') << std::setw(10) << mean_time << " s]";
+    //         cout << " [est. time left: ";
+    //         cout << std::setfill(' ') << std::setw(10) << (m_dim - (left_idx + 1))*mean_time << " s]" << std::flush;
+    //     }
+    // }
+    // cout << endl;   // For the progress bar.
+    // timer(start, "calculate_twobody_matrix_element_bit_representation");
+    // complete_hermitian_matrix(H);    
+    // return H;
 }
-
 }
