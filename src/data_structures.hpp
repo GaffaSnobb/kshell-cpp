@@ -274,6 +274,7 @@ struct Interaction
     const ModelSpace model_space_neutrons;
     const std::unordered_map<Key5, double> tbme_map;
     const std::vector<Key5> tbme_keys;
+    const std::vector<unsigned long long> basis_states;
 
     Interaction(
         unsigned short tbme_mass_dependence_method_,
@@ -288,7 +289,8 @@ struct Interaction
         ModelSpace model_space_protons_,
         ModelSpace model_space_neutrons_,
         std::unordered_map<Key5, double> tbme_map_,
-        std::vector<Key5> tbme_keys_
+        std::vector<Key5> tbme_keys_,
+        std::vector<unsigned long long> basis_states_
     ) :
     tbme_mass_dependence_method(tbme_mass_dependence_method_),
     n_core_protons(n_core_protons_),
@@ -302,7 +304,8 @@ struct Interaction
     model_space_protons(model_space_protons_),
     model_space_neutrons(model_space_neutrons_),
     tbme_map(tbme_map_),
-    tbme_keys(tbme_keys_) {}
+    tbme_keys(tbme_keys_),
+    basis_states(basis_states_) {}
 
     ~Interaction()
     {
