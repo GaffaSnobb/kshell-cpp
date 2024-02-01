@@ -57,7 +57,7 @@ __device__ double calculate_onebody_matrix_element_primitive_bit_representation_
 }
 
 __global__ void matrix_element_dispatcher(
-    double* H,
+    double* H_diag,
     const unsigned long long* basis_states,
     const double* spe,
     const unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices,
@@ -66,15 +66,16 @@ __global__ void matrix_element_dispatcher(
 )
 {
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
-    int row_idx = idx/m_dim;
-    int col_idx = idx%m_dim;
+    // int row_idx = idx/m_dim;
+    // int col_idx = idx%m_dim;
 
-    if ((row_idx < m_dim) and (col_idx < m_dim))
+    // if ((row_idx < m_dim) and (col_idx < m_dim) and (row_idx == col_idx))
+    if (idx < m_dim)
     {
-        const unsigned long long left_state = basis_states[row_idx];
-        const unsigned long long right_state = basis_states[col_idx];
-
-        H[idx] = calculate_onebody_matrix_element_primitive_bit_representation_device(
+        const unsigned long long left_state = basis_states[idx];
+        const unsigned long long right_state = basis_states[idx];
+        
+        H_diag[idx] = calculate_onebody_matrix_element_primitive_bit_representation_device(
             n_orbitals,
             spe,
             orbital_idx_to_composite_m_idx_map_flattened_indices,
@@ -84,79 +85,49 @@ __global__ void matrix_element_dispatcher(
     }
 }
 
-void create_hamiltonian_device_dispatcher(const Interaction& interaction)
+void create_hamiltonian_device_dispatcher(const Interaction& interaction, const Indices& indices, double* H)
 {
-    const Indices indices = indices::generate_indices(interaction);
-    const std::vector<unsigned long long> basis_states = basis::calculate_m_basis_states_primitive_bit_representation(interaction);
-    const unsigned int m_dim = basis_states.size();
-    cout << "---------------------" << endl;
-    print("n_valence_protons", interaction.model_space_protons.n_valence_nucleons);
-    print("n_valence_neutrons", interaction.model_space_neutrons.n_valence_nucleons);
-    print("m_dim", m_dim);
-    print("m_dim**2", m_dim*m_dim);
-    print("H size (MB): ", m_dim*m_dim*sizeof(double)/1000./1000.);
-    cout << "---------------------" << endl;
+    const unsigned int m_dim = interaction.basis_states.size();
+    const unsigned short n_orbitals = interaction.model_space.n_orbitals;
 
-    unsigned long long* basis_states_array = new unsigned long long[m_dim];
-    double* H = new double[m_dim*m_dim];
-    const unsigned int n_cols = m_dim;  // Yes they are the same, I just want to explicitly see what the flattened 2D -> 1D indexing looks like.
-    // const unsigned int n_rows = m_dim;
-
-    for (int row_idx = 0; row_idx < m_dim; row_idx++)
-    {
-        basis_states_array[row_idx] = basis_states[row_idx];
-        // for (int col_idx = 0; col_idx < m_dim; col_idx++)
-        // {
-        //     H[row_idx*n_cols + col_idx] = 0;    // I dont think this is needed.
-        // }
-    }
     const int threads_per_block = 128;
-    const int blocks_per_grid = (m_dim*m_dim + threads_per_block - 1) / threads_per_block;
-
-    double* H_device = nullptr;
+    const int blocks_per_grid = (m_dim + threads_per_block - 1) / threads_per_block;
+    double* H_diag_device = nullptr;
     unsigned long long* basis_states_device = nullptr;
     double* spe_array_device = nullptr;
     unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices_device = nullptr;
-    hipMalloc(&H_device, m_dim*m_dim*sizeof(double));
-    hipMalloc(&basis_states_device, m_dim*sizeof(unsigned long long));
-    hipMalloc(&spe_array_device, interaction.model_space.n_orbitals*sizeof(double));
-    hipMalloc(&orbital_idx_to_composite_m_idx_map_flattened_indices_device, interaction.model_space.n_orbitals*sizeof(unsigned short));
     
-    // hipMemcpy(H_device, H, m_dim*m_dim*sizeof(double), hipMemcpyHostToDevice);
-    hipMemcpy(basis_states_device, basis_states_array, m_dim*sizeof(unsigned long long), hipMemcpyHostToDevice);
-    hipMemcpy(spe_array_device, interaction.spe_array, interaction.model_space.n_orbitals*sizeof(double), hipMemcpyHostToDevice);
-    hipMemcpy(orbital_idx_to_composite_m_idx_map_flattened_indices_device, indices.orbital_idx_to_composite_m_idx_map_flattened_indices, interaction.model_space.n_orbitals*sizeof(unsigned short), hipMemcpyHostToDevice);
+    auto start = timer();
+        double* H_diag_tmp = new double[m_dim];
+        hipMalloc(&H_diag_device, m_dim*sizeof(double));
+        hipMalloc(&basis_states_device, m_dim*sizeof(unsigned long long));
+        hipMalloc(&spe_array_device, n_orbitals*sizeof(double));
+        hipMalloc(&orbital_idx_to_composite_m_idx_map_flattened_indices_device, n_orbitals*sizeof(unsigned short));
+        
+        hipMemcpy(basis_states_device, interaction.basis_states.data(), m_dim*sizeof(unsigned long long), hipMemcpyHostToDevice);
+        hipMemcpy(spe_array_device, interaction.spe_array, n_orbitals*sizeof(double), hipMemcpyHostToDevice);
+        hipMemcpy(orbital_idx_to_composite_m_idx_map_flattened_indices_device, indices.orbital_idx_to_composite_m_idx_map_flattened_indices, n_orbitals*sizeof(unsigned short), hipMemcpyHostToDevice);
 
-    hipLaunchKernelGGL(
-        matrix_element_dispatcher, dim3(blocks_per_grid), dim3(threads_per_block), 0, 0,
-        H_device,
-        basis_states_device,
-        spe_array_device,
-        orbital_idx_to_composite_m_idx_map_flattened_indices_device,
-        m_dim,
-        interaction.model_space.n_orbitals
-    );
-    hipDeviceSynchronize();
-    cout << "\n" << endl;
+        hipLaunchKernelGGL(
+            matrix_element_dispatcher, dim3(blocks_per_grid), dim3(threads_per_block), 0, 0,
+            H_diag_device,
+            basis_states_device,
+            spe_array_device,
+            orbital_idx_to_composite_m_idx_map_flattened_indices_device,
+            m_dim,
+            n_orbitals
+        );
+        hipDeviceSynchronize();
 
-    hipMemcpy(H, H_device, m_dim*m_dim*sizeof(double), hipMemcpyDeviceToHost);
-    hipFree(H_device);
-    hipFree(basis_states_device);
-    hipFree(spe_array_device);
-    hipFree(orbital_idx_to_composite_m_idx_map_flattened_indices_device);
+        hipMemcpy(H_diag_tmp, H_diag_device, m_dim*sizeof(double), hipMemcpyDeviceToHost);
+        hipFree(H_diag_device);
+        hipFree(basis_states_device);
+        hipFree(spe_array_device);
+        hipFree(orbital_idx_to_composite_m_idx_map_flattened_indices_device);
+    timer(start, "[DEVICE] one-body calc, alloc, copy, and free time");
 
-    // for (int row_idx = 0; row_idx < m_dim; row_idx++)
-    // {
-    //     for (int col_idx = 0; col_idx < m_dim; col_idx++)
-    //     {
-    //         cout << H[row_idx*n_cols + col_idx] << ", ";
-    //     }
-    //     cout << endl;
-    // }
-    // cout << endl;
+    for (int diag_idx = 0; diag_idx < m_dim; diag_idx++) H[diag_idx*m_dim + diag_idx] = H_diag_tmp[diag_idx]; // Copy data to the diagonal of H.
 
-    
-    delete[] basis_states_array;
-    delete[] H;
+    delete[] H_diag_tmp;
 }
 }

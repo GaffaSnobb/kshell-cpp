@@ -5,7 +5,7 @@
 
 namespace hamiltonian_device
 {
-void create_hamiltonian_device_dispatcher(const Interaction& interaction);
+void create_hamiltonian_device_dispatcher(const Interaction& interaction, const Indices& indices, double* H);
 }
 
 #endif
