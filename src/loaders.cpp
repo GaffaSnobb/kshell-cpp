@@ -6,6 +6,7 @@
 
 #include "tools.hpp"
 #include "data_structures.hpp"
+#include "basis.hpp"
 
 using std::cout;
 using std::endl;
@@ -116,7 +117,9 @@ Interaction load_interaction(
 )
 {
     /*
-    Load raw interaction data from the interaction file.
+    Load interaction data from the interaction file. Set up the
+    Interaction, ModelSpace, OrbitalParameters data structures.
+    Calculate the m basis states.
     */
     auto start = timer();
     std::vector<unsigned short> orb_0, orb_1, orb_2, orb_3, j_couple;
@@ -379,7 +382,14 @@ Interaction load_interaction(
         model_space_protons,
         model_space_neutrons,
         tbme_map,
-        tbme_keys      
+        tbme_keys,
+        basis::calculate_m_basis_states_primitive_bit_representation(
+            all_jz_values_protons.size(),   // n_proton_m_substates
+            all_jz_values_neutrons.size(),  // n_neutron_m_substates
+            n_valence_protons,
+            n_valence_neutrons,
+            all_jz_values
+        )
     );
     return interaction;
 }
