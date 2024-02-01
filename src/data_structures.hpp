@@ -23,16 +23,16 @@ struct Key6
     Custom struct to be used as a key in a std::unordered_map for the
     Clebsh-Gordan coefficients.
     */
-    unsigned short a;
-    short b;
-    unsigned short c;
-    short d;
-    unsigned short e;
-    short f;
+    unsigned short j1;
+    short m1;
+    unsigned short j2;
+    short m2;
+    unsigned short J;
+    short M;
 
     bool operator==(const Key6& other) const
     {
-        return a == other.a && b == other.b && c == other.c && d == other.d && e == other.e && f == other.f;
+        return j1 == other.j1 && m1 == other.m1 && j2 == other.j2 && m2 == other.m2 && J == other.J && M == other.M;
     }
 };
 
@@ -93,16 +93,16 @@ namespace std
     {
         size_t operator()(const Key6& k) const
         {   // Hash individual members and combine them
-            size_t hash_a = std::hash<unsigned short>()(k.a);
-            size_t hash_b = std::hash<short>()(k.b);
-            size_t hash_c = std::hash<unsigned short>()(k.c);
-            size_t hash_d = std::hash<short>()(k.d);
-            size_t hash_e = std::hash<unsigned short>()(k.e);
-            size_t hash_f = std::hash<short>()(k.f);
+            size_t hash_j1 = std::hash<unsigned short>()(k.j1);
+            size_t hash_m1 = std::hash<short>()(k.m1);
+            size_t hash_j2 = std::hash<unsigned short>()(k.j2);
+            size_t hash_m2 = std::hash<short>()(k.m2);
+            size_t hash_J = std::hash<unsigned short>()(k.J);
+            size_t hash_M = std::hash<short>()(k.M);
 
             // Combine these hashes together
-            return ((((hash_a ^ (hash_b << 1)) >> 1) ^ (hash_c << 1)) >> 1) ^
-                   ((((hash_d ^ (hash_e << 1)) >> 1) ^ (hash_f << 1)) >> 1);
+            return ((((hash_j1 ^ (hash_m1 << 1)) >> 1) ^ (hash_j2 << 1)) >> 1) ^
+                   ((((hash_m2 ^ (hash_J << 1)) >> 1) ^ (hash_M << 1)) >> 1);
         }
     };
 }
