@@ -232,7 +232,13 @@ std::vector<std::bitset<n_bits_bitset>> calculate_m_basis_states_bitset_represen
     return basis_states;
 }
 
-std::vector<unsigned long long> calculate_m_basis_states_primitive_bit_representation(const Interaction& interaction)
+const std::vector<unsigned long long> calculate_m_basis_states_primitive_bit_representation(
+    const unsigned short n_proton_m_substates,
+    const unsigned short n_neutron_m_substates,
+    const unsigned short n_valence_protons,
+    const unsigned short n_valence_neutrons,
+    const std::vector<short>& all_jz_values
+)
 {
     /*
     Calculate the M-scheme basis states.
@@ -271,8 +277,7 @@ std::vector<unsigned long long> calculate_m_basis_states_primitive_bit_represent
     the valence particles and save the configurations whose m values sum
     up to M_target.
     */
-    unsigned short n_proton_m_substates = interaction.model_space_protons.all_jz_values.size();
-    unsigned short n_neutron_m_substates = interaction.model_space_neutrons.all_jz_values.size();
+    const unsigned short n_valence_nucleons = n_valence_protons + n_valence_neutrons;
 
     std::vector<unsigned short> proton_indices = range<unsigned short>( // All possible proton m substate indices.
         0, n_proton_m_substates, 1
@@ -280,7 +285,7 @@ std::vector<unsigned long long> calculate_m_basis_states_primitive_bit_represent
 
     auto proton_index_combinations = iter::combinations(
         proton_indices, // Iterable.
-        interaction.model_space_protons.n_valence_nucleons  // Number of elements to choose from the iterable.
+        n_valence_protons  // Number of elements to choose from the iterable.
     );
 
     std::vector<unsigned short> neutron_indices = range<unsigned short>(    // All possible neutron m substate indices.
@@ -289,11 +294,11 @@ std::vector<unsigned long long> calculate_m_basis_states_primitive_bit_represent
 
     auto neutron_index_combinations = iter::combinations(
         neutron_indices,
-        interaction.model_space_neutrons.n_valence_nucleons
+        n_valence_neutrons
     );
 
     unsigned short M_target;
-    if (interaction.model_space.n_valence_nucleons%2 == 0)
+    if (n_valence_nucleons%2 == 0)
     {
         /*
         For an even number of valence nucleons, the M = 0 basis states
@@ -321,12 +326,12 @@ std::vector<unsigned long long> calculate_m_basis_states_primitive_bit_represent
             for (unsigned short p : proton_combination)
             {
                 bittools::set_bit(basis_state, p);
-                M += interaction.model_space.all_jz_values[p];
+                M += all_jz_values[p];
             }
             for (unsigned short n : neutron_combination)
             {
                 bittools::set_bit(basis_state, n);
-                M += interaction.model_space.all_jz_values[n];
+                M += all_jz_values[n];
             }
             if (M == M_target)
             {
