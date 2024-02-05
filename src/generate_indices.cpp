@@ -8,6 +8,9 @@ const Indices generate_indices(const Interaction& interaction)
     /*
     Generate values for all the attributes of the Indices data
     structure.
+
+    Pre-generated indices for the two-body Hamiltonian matrix element
+    calculations are used to reduce the computational load.
     */
     auto start = timer();
     std::vector<unsigned short> orbital_idx_to_j_map;
@@ -36,7 +39,7 @@ const Indices generate_indices(const Interaction& interaction)
         stores only the end index of the current map. Since the
         m-substate indices are in increasing order and incremeted by 1,
         there is no need to explicitly store all the numbers. The
-        flattened array is used for passing the index mapping to a GPU
+        flattened array is used for passing the index mapping to a
         kernel.
         */
         unsigned short current_size = orbital_idx_to_composite_m_idx_map[i].size();
