@@ -320,6 +320,22 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
         {
             for (unsigned short annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
             {
+                if (
+                    (indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0] +  // m1
+                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1]) != // m2
+                    m_coupled                                                       // M
+                )
+                {
+                    /*
+                    The Clebsch-Gordan coefficient is always zero when
+                    m1 + m2 != M. This is because of conservation of the
+                    z-component of angular momentum in the coupling
+                    process.
+                    */
+                    continue;
+                }
+                
+
                 // if (not right_state.test(annihilation_comp_m_idx_0))
                 if (not bittools::is_bit_set(right_state, annihilation_comp_m_idx_0)) continue;
 
@@ -332,13 +348,19 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                 const unsigned short n_operator_swaps_annihilation_1 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
                 annihilation_sign *= bittools::negative_one_pow(n_operator_swaps_annihilation_1);
 
+                // if ((m1 + m2) != M)
+                // if ((indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0] + indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1]) != m_coupled)
+                // {
+                //     printf("YEEEE\n");
+                // }
+
                 const Key6 annihilation_key = {
-                    indices.orbital_idx_to_j_map[annihilation_orb_idx_0],
-                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0],
-                    indices.orbital_idx_to_j_map[annihilation_orb_idx_1],
-                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1],
-                    j_coupled,
-                    m_coupled
+                    indices.orbital_idx_to_j_map[annihilation_orb_idx_0],           // j1
+                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0],    // m1
+                    indices.orbital_idx_to_j_map[annihilation_orb_idx_1],           // j2
+                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1],    // m2
+                    j_coupled,                                                      // J
+                    m_coupled                                                       // M
                 };
 
                 const double cg_annihilation = clebsch_gordan.at(annihilation_key);
@@ -351,6 +373,11 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                 {
                     for (unsigned short creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
                     {   
+                        // // if ((m1 + m2) != M)
+                        // if ((indices.composite_m_idx_to_m_map[creation_comp_m_idx_0] + indices.composite_m_idx_to_m_map[creation_comp_m_idx_1]) != m_coupled)
+                        // {
+                        //     printf("YEEEE\n");
+                        // }
                         if (bittools::is_bit_set(new_right_state_annihilation, creation_comp_m_idx_1)) continue;
                         // creation_res_switch = (not new_right_state_annihilation[creation_comp_m_idx_1]);
                         
@@ -367,13 +394,14 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                         if (left_state != new_right_state_creation) continue;
                         // creation_res_switch *= (left_state == new_right_state_creation);
 
+
                         const Key6 creation_key = {
-                            indices.orbital_idx_to_j_map[creation_orb_idx_0],
-                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_0],
-                            indices.orbital_idx_to_j_map[creation_orb_idx_1],
-                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_1],
-                            j_coupled,
-                            m_coupled
+                            indices.orbital_idx_to_j_map[creation_orb_idx_0],           // j1
+                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_0],    // m1
+                            indices.orbital_idx_to_j_map[creation_orb_idx_1],           // j2
+                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_1],    // m2
+                            j_coupled,                                                  // J
+                            m_coupled                                                   // M
                         };
 
                         const double cg_creation = clebsch_gordan.at(creation_key);
@@ -388,7 +416,7 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
     return twobody_res;
 }
 
-void create_hamiltonian_primitive_bit_representation(const Interaction& interaction, const Indices& indices, double* H)
+void create_hamiltonian_primitive_bit_representation_new(const Interaction& interaction, const Indices& indices, double* H)
 {
     const unsigned int m_dim = interaction.basis_states.size();
 
@@ -408,7 +436,7 @@ void create_hamiltonian_primitive_bit_representation(const Interaction& interact
             interaction.basis_states[idx]
         );
     }
-    timer(start, "[HOST] one-body calc time");
+    timer(start, "[HOST][NEW] one-body calc time");
 
     start = timer();
     int thread_id = omp_get_thread_num();
@@ -447,11 +475,11 @@ void create_hamiltonian_primitive_bit_representation(const Interaction& interact
         }
     }
     cout << endl;   // For the progress bar.
-    timer(start, "[HOST][REFERENCE] two-body calc time");
+    timer(start, "[HOST][NEW] two-body calc time");
     // complete_hermitian_matrix(H);
 }
 
-void create_hamiltonian_primitive_bit_representation_tmp(const Interaction& interaction, const Indices& indices, double* H)
+void create_hamiltonian_primitive_bit_representation_reference(const Interaction& interaction, const Indices& indices, double* H)
 {
     const unsigned int m_dim = interaction.basis_states.size();
 
@@ -471,7 +499,7 @@ void create_hamiltonian_primitive_bit_representation_tmp(const Interaction& inte
             interaction.basis_states[idx]
         );
     }
-    timer(start, "[HOST] one-body calc time");
+    timer(start, "[HOST][REFERENCE] one-body calc time");
 
     start = timer();
     int thread_id = omp_get_thread_num();
@@ -510,7 +538,7 @@ void create_hamiltonian_primitive_bit_representation_tmp(const Interaction& inte
         }
     }
     cout << endl;   // For the progress bar.
-    timer(start, "[HOST][NEW] two-body calc time");
+    timer(start, "[HOST][REFERENCE] two-body calc time");
     // complete_hermitian_matrix(H);
 }
 }

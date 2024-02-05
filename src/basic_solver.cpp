@@ -42,8 +42,9 @@ int main(int argc, char* argv[])
     for (int i = 0; i < 1; i++)
     {
         auto start = timer();
-        hamiltonian::create_hamiltonian_primitive_bit_representation_tmp(interaction, indices, H_host_reference);
-        hamiltonian::create_hamiltonian_primitive_bit_representation(interaction, indices, H_host);
+        hamiltonian::create_hamiltonian_primitive_bit_representation_reference(interaction, indices, H_host_reference);
+        cout << endl;
+        hamiltonian::create_hamiltonian_primitive_bit_representation_new(interaction, indices, H_host);
         // hamiltonian_device::create_hamiltonian_device_dispatcher(interaction, indices, H_device);
         timing.push_back(timer(start, "main").count());
     }
