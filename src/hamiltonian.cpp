@@ -335,7 +335,6 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                     continue;
                 }
                 
-
                 // if (not right_state.test(annihilation_comp_m_idx_0))
                 if (not bittools::is_bit_set(right_state, annihilation_comp_m_idx_0)) continue;
 
@@ -348,12 +347,6 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                 const unsigned short n_operator_swaps_annihilation_1 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
                 annihilation_sign *= bittools::negative_one_pow(n_operator_swaps_annihilation_1);
 
-                // if ((m1 + m2) != M)
-                // if ((indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0] + indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1]) != m_coupled)
-                // {
-                //     printf("YEEEE\n");
-                // }
-
                 const Key6 annihilation_key = {
                     indices.orbital_idx_to_j_map[annihilation_orb_idx_0],           // j1
                     indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0],    // m1
@@ -363,8 +356,8 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                     m_coupled                                                       // M
                 };
 
-                const double cg_annihilation = clebsch_gordan.at(annihilation_key);
-                if (cg_annihilation == 0) continue;
+                const double cg_annihilation = clebsch_gordan_sparse.at(annihilation_key);
+                // if (cg_annihilation == 0) continue;  // There are almost no zeros
 
                 // Creation terms
                 double creation_res = 0.0;
@@ -373,11 +366,20 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                 {
                     for (unsigned short creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
                     {   
-                        // // if ((m1 + m2) != M)
-                        // if ((indices.composite_m_idx_to_m_map[creation_comp_m_idx_0] + indices.composite_m_idx_to_m_map[creation_comp_m_idx_1]) != m_coupled)
-                        // {
-                        //     printf("YEEEE\n");
-                        // }
+                        if (
+                            (indices.composite_m_idx_to_m_map[creation_comp_m_idx_0] +  // m1
+                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_1]) != // m2
+                            m_coupled                                                   // M
+                        )
+                        {
+                            /*
+                            The Clebsch-Gordan coefficient is always zero when
+                            m1 + m2 != M. This is because of conservation of the
+                            z-component of angular momentum in the coupling
+                            process.
+                            */
+                            continue;
+                        }
                         if (bittools::is_bit_set(new_right_state_annihilation, creation_comp_m_idx_1)) continue;
                         // creation_res_switch = (not new_right_state_annihilation[creation_comp_m_idx_1]);
                         
@@ -394,7 +396,6 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                         if (left_state != new_right_state_creation) continue;
                         // creation_res_switch *= (left_state == new_right_state_creation);
 
-
                         const Key6 creation_key = {
                             indices.orbital_idx_to_j_map[creation_orb_idx_0],           // j1
                             indices.composite_m_idx_to_m_map[creation_comp_m_idx_0],    // m1
@@ -404,7 +405,7 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                             m_coupled                                                   // M
                         };
 
-                        const double cg_creation = clebsch_gordan.at(creation_key);
+                        const double cg_creation = clebsch_gordan_sparse.at(creation_key);
                         // if (cg_creation == 0) continue;  // Might be faster to just multiply with 0 instead of checking.
                         creation_res += creation_sign*cg_creation;//*creation_res_switch;
                     }
