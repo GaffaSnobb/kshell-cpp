@@ -312,8 +312,10 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
         const short m_coupled = indices.m_coupled[i];
         const double tbme = indices.tbme[i];
 
-        const double creation_norm = 1/std::sqrt(1 + (creation_orb_idx_0 == creation_orb_idx_1));
-        const double annihilation_norm = 1/std::sqrt(1 + (annihilation_orb_idx_0 == annihilation_orb_idx_1));
+        // const double creation_norm = 1/std::sqrt(1 + (creation_orb_idx_0 == creation_orb_idx_1));
+        // const double annihilation_norm = 1/std::sqrt(1 + (annihilation_orb_idx_0 == annihilation_orb_idx_1));
+        const double creation_norm = inverse_sqrt_2[creation_orb_idx_0 == creation_orb_idx_1];
+        const double annihilation_norm = inverse_sqrt_2[annihilation_orb_idx_0 == annihilation_orb_idx_1];
 
         // Annihilation terms
         for (unsigned short annihilation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0])
@@ -444,13 +446,11 @@ void create_hamiltonian_primitive_bit_representation_new(const Interaction& inte
     std::vector<long long> loop_timings;
     auto loop_timer = timer();
 
-    // #pragma omp parallel for //num_threads(6)
-    // for (int left_idx : tq::trange(m_dim))
     for (unsigned int row_idx = 0; row_idx < m_dim; row_idx++)
     {   
         if (thread_id == 0) loop_timer = timer();
         
-        #pragma omp parallel for
+        #pragma omp parallel for //num_threads(6)
         for (int col_idx = row_idx; col_idx < m_dim; col_idx++)
         {    
             H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation_new(
@@ -498,8 +498,6 @@ void create_hamiltonian_primitive_bit_representation_reference(const Interaction
     std::vector<long long> loop_timings;
     auto loop_timer = timer();
 
-    // #pragma omp parallel for //num_threads(6)
-    // for (int left_idx : tq::trange(m_dim))
     for (unsigned int row_idx = 0; row_idx < m_dim; row_idx++)
     {   
         if (thread_id == 0) loop_timer = timer();

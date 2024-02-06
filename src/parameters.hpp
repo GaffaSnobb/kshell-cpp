@@ -5,6 +5,8 @@
 
 constexpr unsigned short n_bits_bitset = 24;    // Has to be equal to or larger than the number of m-substates in the model space.
 
+constexpr double inverse_sqrt_2[2] = {1, 0.7071067811865475};   // { 1/sqrt(1), 1/sqrt(2) }. Used in the two-body H matrix element calculations.
+
 const std::unordered_map<Key6, double> clebsch_gordan_sparse = {
     {{ 3, -3,  3,  3,  0,  0}, -0.5},
     {{ 3, -3,  3,  1,  2, -2}, 0.5477225575051661},
