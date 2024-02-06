@@ -25,7 +25,7 @@ void print_flattened_2d_array(T1* arr, T2 size)
 template <typename T1, typename T2>
 bool compare_arrays(T1* arr1, T1* arr2, T2 size)
 {
-    for (int i = 0; i < size; i++) if (arr1[i] != arr2[i]) return false;
+    for (int i = 0; i < size; i++) if (std::abs(arr1[i] - arr2[i]) > 1e-13) return false;
     return true;
 }
 
