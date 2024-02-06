@@ -37,6 +37,8 @@ template <typename T1, typename T2>
 bool compare_arrays(T1* arr1, T1* arr2, T2 size);
 template <typename T1, typename T2>
 void print_flattened_2d_array(T1* arr, T2 size);
+template <typename T0, typename T1, typename T2>
+void print_loop_timer(std::vector<T0>& loop_timings, T1 idx, T2 n_iterations);
 
 #include "tools.tpp"
 #endif // TOOLS_HPP

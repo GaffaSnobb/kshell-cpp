@@ -1,7 +1,9 @@
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <type_traits>
 #include <numeric>
+#include <omp.h>
 
 using std::cout;
 using std::endl;
@@ -126,4 +128,19 @@ template <typename T>
 double mean(std::vector<T> vec)
 {
     return std::accumulate(vec.begin(), vec.end(), 0.0)/vec.size();
+}
+
+template <typename T0, typename T1, typename T2>
+void print_loop_timer(std::vector<T0>& loop_timings, T1 idx, T2 n_iterations)
+{
+    double mean_time = mean(loop_timings)/1000;
+    int num_threads = omp_get_num_threads();
+    
+    cout << "\r[" << idx << " of ≈ " << (double)n_iterations/num_threads << "]";
+    cout << " [loop time: ";
+    cout << std::setfill(' ') << std::setw(5) << loop_timings.back()/1000. << " s";
+    cout << " - mean loop time: ";
+    cout << std::setfill(' ') << std::setw(10) << mean_time << " s]";
+    cout << " [est. time left: ";
+    cout << std::setfill(' ') << std::setw(10) << (n_iterations - (idx + 1))*mean_time << " s]" << std::flush;
 }
