@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <bitset>
-#include <iomanip>
+// #include <iomanip>
 #include <omp.h>
 #include <hip/hip_runtime.h>
 #include "data_structures.hpp"
@@ -460,19 +460,10 @@ void create_hamiltonian_primitive_bit_representation_new(const Interaction& inte
                 interaction.basis_states[col_idx]
             );
         }
-        if (thread_id == 0)
+        if ((thread_id == 0) and (row_idx%10 == 0))
         {
             loop_timings.push_back(timer(loop_timer));
-            double mean_time = mean(loop_timings)/1000;
-            int num_threads = omp_get_num_threads();
-            
-            cout << "\r[" << row_idx << " of ≈ " << (double)m_dim/num_threads << "]";
-            cout << " [loop time: ";
-            cout << std::setfill(' ') << std::setw(5) << loop_timings.back()/1000. << " s";
-            cout << " - mean loop time: ";
-            cout << std::setfill(' ') << std::setw(10) << mean_time << " s]";
-            cout << " [est. time left: ";
-            cout << std::setfill(' ') << std::setw(10) << (m_dim - (row_idx + 1))*mean_time << " s]" << std::flush;
+            print_loop_timer(loop_timings, row_idx, m_dim);
         }
     }
     cout << endl;   // For the progress bar.
@@ -523,19 +514,10 @@ void create_hamiltonian_primitive_bit_representation_reference(const Interaction
                 interaction.basis_states[col_idx]
             );
         }
-        if (thread_id == 0)
+        if ((thread_id == 0) and (row_idx%10 == 0))
         {
             loop_timings.push_back(timer(loop_timer));
-            double mean_time = mean(loop_timings)/1000;
-            int num_threads = omp_get_num_threads();
-            
-            cout << "\r[" << row_idx << " of ≈ " << (double)m_dim/num_threads << "]";
-            cout << " [loop time: ";
-            cout << std::setfill(' ') << std::setw(5) << loop_timings.back()/1000. << " s";
-            cout << " - mean loop time: ";
-            cout << std::setfill(' ') << std::setw(10) << mean_time << " s]";
-            cout << " [est. time left: ";
-            cout << std::setfill(' ') << std::setw(10) << (m_dim - (row_idx + 1))*mean_time << " s]" << std::flush;
+            print_loop_timer(loop_timings, row_idx, m_dim);
         }
     }
     cout << endl;   // For the progress bar.
