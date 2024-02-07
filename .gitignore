@@ -104,4 +104,5 @@ Temporary Items
 .vscode
 
 external/*
-.txt
+*.txt
+*playground*
