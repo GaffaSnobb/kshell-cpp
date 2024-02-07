@@ -1,17 +1,11 @@
 #include <vector>
 #include <iostream>
-#include <algorithm>
-#include <chrono>
-#include <bitset>
-// #include <iomanip>
 #include <omp.h>
-#include <hip/hip_runtime.h>
 #include "data_structures.hpp"
 #include "generate_indices.hpp"
 #include "tools.hpp"
 #include "bit_manipulation_tools.hpp"
 #include "bit_manipulation_tools_device.hpp"
-#include "basis.hpp"
 #include "parameters.hpp"
 #include "../external/eigen-3.4.0/Eigen/Dense"
 // #include "../external/eigen-3.4.0/Eigen/Eigenvalues"
@@ -299,6 +293,9 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
     const unsigned long long& right_state
 )
 {
+    unsigned short j1_idx, m1_idx, j2_idx, m2_idx, j3_idx;  // Indices for the Clebsch-Gordan 5D array...
+    unsigned short flat_cg_idx;                             // ...translated to a flattened 1D array.
+
     double twobody_res = 0;
     // double creation_res_switch = 0; // For removing if statements in the inner creation loop. Multiply the result by 0 instead of using if (condition) continue;.
     const unsigned int n_indices = indices.creation_orb_indices_0.size();
@@ -312,8 +309,6 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
         const short m_coupled = indices.m_coupled[i];
         const double tbme = indices.tbme[i];
 
-        // const double creation_norm = 1/std::sqrt(1 + (creation_orb_idx_0 == creation_orb_idx_1));
-        // const double annihilation_norm = 1/std::sqrt(1 + (annihilation_orb_idx_0 == annihilation_orb_idx_1));
         const double creation_norm = inverse_sqrt_2[creation_orb_idx_0 == creation_orb_idx_1];
         const double annihilation_norm = inverse_sqrt_2[annihilation_orb_idx_0 == annihilation_orb_idx_1];
 
@@ -348,18 +343,15 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                 if (not bittools::is_bit_set(new_right_state_annihilation, annihilation_comp_m_idx_1)) continue;
                 const unsigned short n_operator_swaps_annihilation_1 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
                 annihilation_sign *= bittools::negative_one_pow(n_operator_swaps_annihilation_1);
+                
+                j1_idx = (indices.orbital_idx_to_j_map[annihilation_orb_idx_0] + 1)/2 - 1;
+                m1_idx = (indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0] + 5)/2;
+                j2_idx = (indices.orbital_idx_to_j_map[annihilation_orb_idx_1] + 1)/2 - 1;
+                m2_idx = (indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1] + 5)/2;
+                j3_idx = j_coupled/2;
+                flat_cg_idx = ((((j1_idx*6 + m1_idx)*3 + j2_idx)*6 + m2_idx)*6 + j3_idx);    // Indexing a 1D array as if it was a 5D array.
 
-                const Key6 annihilation_key = {
-                    indices.orbital_idx_to_j_map[annihilation_orb_idx_0],           // j1
-                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0],    // m1
-                    indices.orbital_idx_to_j_map[annihilation_orb_idx_1],           // j2
-                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1],    // m2
-                    j_coupled,                                                      // J
-                    m_coupled                                                       // M
-                };
-
-                const double cg_annihilation = clebsch_gordan_sparse.at(annihilation_key);
-                // if (cg_annihilation == 0) continue;  // There are almost no zeros
+                const double cg_annihilation = clebsch_gordan_array[flat_cg_idx];
 
                 // Creation terms
                 double creation_res = 0.0;
@@ -398,16 +390,14 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                         if (left_state != new_right_state_creation) continue;
                         // creation_res_switch *= (left_state == new_right_state_creation);
 
-                        const Key6 creation_key = {
-                            indices.orbital_idx_to_j_map[creation_orb_idx_0],           // j1
-                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_0],    // m1
-                            indices.orbital_idx_to_j_map[creation_orb_idx_1],           // j2
-                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_1],    // m2
-                            j_coupled,                                                  // J
-                            m_coupled                                                   // M
-                        };
+                        j1_idx = (indices.orbital_idx_to_j_map[creation_orb_idx_0] + 1)/2 - 1;
+                        m1_idx = (indices.composite_m_idx_to_m_map[creation_comp_m_idx_0] + 5)/2;
+                        j2_idx = (indices.orbital_idx_to_j_map[creation_orb_idx_1] + 1)/2 - 1;
+                        m2_idx = (indices.composite_m_idx_to_m_map[creation_comp_m_idx_1] + 5)/2;
+                        flat_cg_idx = ((((j1_idx*6 + m1_idx)*3 + j2_idx)*6 + m2_idx)*6 + j3_idx);    // Indexing a 1D array as if it was a 5D array.
 
-                        const double cg_creation = clebsch_gordan_sparse.at(creation_key);
+                        const double cg_creation = clebsch_gordan_array[flat_cg_idx];
+
                         // if (cg_creation == 0) continue;  // Might be faster to just multiply with 0 instead of checking.
                         creation_res += creation_sign*cg_creation;//*creation_res_switch;
                     }
@@ -450,7 +440,7 @@ void create_hamiltonian_primitive_bit_representation_new(const Interaction& inte
     {   
         if (thread_id == 0) loop_timer = timer();
         
-        #pragma omp parallel for //num_threads(6)
+        #pragma omp parallel for //num_threads(1)
         for (int col_idx = row_idx; col_idx < m_dim; col_idx++)
         {    
             H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation_new(
