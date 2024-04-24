@@ -3,6 +3,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <cmath>
+#include <filesystem>
 
 #include "tools.hpp"
 #include "data_structures.hpp"
@@ -132,6 +133,7 @@ Interaction load_interaction(
     std::vector<OrbitalParameters> model_space_neutrons_orbitals;
     std::vector<OrbitalParameters> model_space_orbitals;
 
+    check_if_file_exists(interaction_filename);
     std::ifstream infile(interaction_filename);
     std::string line;
     unsigned int n_tbme;    // gs8.snt has over 10k TBMEs. short is enough for this, but other interactions might have even more.
