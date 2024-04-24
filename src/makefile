@@ -1,11 +1,14 @@
-# CXX = clang++
-# CXX = /usr/lib/llvm-14/bin/clang++
+PATHS = src/
+PATHB = build/
+PATHD = build/depends/
+PATHO = build/objs/
+
 CXX = hipcc
-EXEC = run.out
+EXEC = $(PATHB)run.out
 SRCS = tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp generate_indices.cpp hamiltonian_bitset_representation.cpp hamiltonian_device.cpp diagnostics.cpp hip_wrappers.cpp
-OBJS = $(SRCS:.cpp=.o)
-DEPS = $(OBJS:.o=.d)
-CXXFLAGS = -std=c++20 -MMD -Wall -fopenmp -Ofast# -Wno-unused-result
+OBJS = $(addprefix $(PATHO), $(SRCS:.cpp=.o))
+DEPS = $(addprefix $(PATHD), $(SRCS:.cpp=.d))
+CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -Ofast# -Wno-unused-result
 
 TEST_SRC = ../tests/hash_tests.cpp
 TEST_OBJ = $(TEST_SRC:.cpp=.o)
@@ -16,15 +19,18 @@ PLAYGROUND_OBJ = $(PLAYGROUND_SRC:.cpp=.o)
 PLAYGROUND_EXEC = playground.out
 
 # Build all
-all: $(EXEC)
+all: setup $(EXEC)
+
+setup:
+	mkdir -p $(PATHB) $(PATHD) $(PATHO)
 
 # Link
 $(EXEC): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(EXEC) $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Rule to generate object files from cpp files
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(PATHO)%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@ -MF $(PATHD)$*.d
 
 # Rule to compile test source file
 $(TEST_OBJ): $(TEST_SRC)
@@ -43,4 +49,4 @@ play:
 clean:
 	rm -f $(OBJS) $(EXEC) $(DEPS) $(TEST_OBJ) $(TEST_EXEC) $(PLAYGROUND_OBJ) $(PLAYGROUND_EXEC)
 
-.PHONY: all clean
+.PHONY: all clean test play setup
