@@ -1,9 +1,4 @@
-#include <fstream>
 #include <iostream>
-#include <algorithm>
-#include <chrono>
-#include <bitset>
-#include "basis.hpp"
 #include "generate_indices.hpp"
 #include "data_structures.hpp"
 #include "parameters.hpp"
@@ -13,7 +8,6 @@
 #include "hamiltonian_device.hpp"
 #include "hamiltonian_bitset_representation.hpp"
 #include "diagnostics.hpp"
-// #include "../external/cppitertools/combinations.hpp"
 #include "../external/eigen-3.4.0/Eigen/Dense"
 #include "../external/eigen-3.4.0/Eigen/Eigenvalues"
 // #include "../external/boost_1_84_0/boost/container_hash/hash.hpp"
@@ -44,10 +38,11 @@ int main(int argc, char* argv[])
         auto start = timer();
         hamiltonian::create_hamiltonian_primitive_bit_representation_reference(interaction, indices, H_host_reference);
         cout << endl;
-        hamiltonian::create_hamiltonian_primitive_bit_representation_new(interaction, indices, H_host);
-        // hamiltonian_device::create_hamiltonian_device_dispatcher(interaction, indices, H_device);
-        timing.push_back(timer(start, "main").count());
+        // hamiltonian::create_hamiltonian_primitive_bit_representation_new(interaction, indices, H_host);
+        // hamiltonian_device::create_hamiltonian_device_dispatcher(interaction, indices, H_host);
+        timing.push_back(timer(start));
     }
+    cout << endl;
     print_vector(timing);
     cout << mean(timing) << endl;
     cout << "H_host_reference == H_host: " << compare_arrays(H_host_reference, H_host, m_dim*m_dim) << endl;
