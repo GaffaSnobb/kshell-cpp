@@ -2,6 +2,8 @@
 #include <vector>
 #include <chrono>
 #include <bitset>
+#include <filesystem>
+#include <stdexcept>
 #include "parameters.hpp"
 #include "tools.hpp"
 #include "data_structures.hpp"
@@ -150,4 +152,16 @@ long long timer(std::chrono::time_point<std::chrono::high_resolution_clock> star
     std::chrono::time_point<std::chrono::high_resolution_clock> stop = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     return duration.count();
+}
+
+void check_if_file_exists(const std::filesystem::path& path)
+{
+    if (!std::filesystem::exists(path))
+    {
+        throw std::runtime_error("File does not exist: " + path.string());
+    }
+    if (!std::filesystem::is_regular_file(path))
+    {
+        throw std::runtime_error("The path is not a file: " + path.string());
+    }
 }

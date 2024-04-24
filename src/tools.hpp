@@ -4,6 +4,7 @@
 #include <vector>
 #include <chrono>
 #include <bitset>
+#include <filesystem>
 #include "parameters.hpp"
 #include "data_structures.hpp"
 #include "../external/eigen-3.4.0/Eigen/Dense"
@@ -39,6 +40,8 @@ template <typename T1, typename T2>
 void print_flattened_2d_array(T1* arr, T2 size);
 template <typename T0, typename T1, typename T2>
 void print_loop_timer(std::vector<T0>& loop_timings, T1 idx, T2 n_iterations);
+
+void check_if_file_exists(const std::filesystem::path& path);
 
 #include "tools.tpp"
 #endif // TOOLS_HPP
