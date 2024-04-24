@@ -5,9 +5,9 @@ PATHO = build/objs/
 
 CXX = hipcc
 EXEC = $(PATHB)run.out
-SRCS = tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp generate_indices.cpp hamiltonian_bitset_representation.cpp hamiltonian_device.cpp diagnostics.cpp hip_wrappers.cpp
-OBJS = $(addprefix $(PATHO), $(SRCS:.cpp=.o))
-DEPS = $(addprefix $(PATHD), $(SRCS:.cpp=.d))
+SRCS = $(addprefix $(PATHS), tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp generate_indices.cpp hamiltonian_bitset_representation.cpp hamiltonian_device.cpp diagnostics.cpp hip_wrappers.cpp)
+OBJS = $(addprefix $(PATHO), $(notdir $(SRCS:.cpp=.o)))
+DEPS = $(addprefix $(PATHD), $(notdir $(SRCS:.cpp=.d)))
 CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -Ofast# -Wno-unused-result
 
 TEST_SRC = ../tests/hash_tests.cpp
@@ -29,8 +29,9 @@ $(EXEC): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Rule to generate object files from cpp files
-$(PATHO)%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@ -MF $(PATHD)$*.d
+$(PATHO)%.o: $(PATHS)%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@ -MF $(PATHD)$(notdir $*).d
+
 
 # Rule to compile test source file
 $(TEST_OBJ): $(TEST_SRC)
@@ -46,7 +47,10 @@ play:
 # Include the dependency files
 -include $(DEPS)
 
+# clean:
+# 	rm -f $(OBJS) $(EXEC) $(DEPS) $(TEST_OBJ) $(TEST_EXEC) $(PLAYGROUND_OBJ) $(PLAYGROUND_EXEC)
+
 clean:
-	rm -f $(OBJS) $(EXEC) $(DEPS) $(TEST_OBJ) $(TEST_EXEC) $(PLAYGROUND_OBJ) $(PLAYGROUND_EXEC)
+	rm -rf $(PATHB)
 
 .PHONY: all clean test play setup
