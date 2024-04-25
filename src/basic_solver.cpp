@@ -19,21 +19,7 @@ using std::string;
 
 int main(int argc, char* argv[])
 {
-    cout << "bool              : " << sizeof(bool)               << "B (" << sizeof(bool)*8               << "b)" << endl;
-    cout << "char              : " << sizeof(char)               << "B (" << sizeof(char)*8               << "b)" << endl;
-    cout << "unsigned short    : " << sizeof(unsigned short)     << "B (" << sizeof(unsigned short)*8     << "b)" << " [0, " << (2ULL << (8*sizeof(unsigned short) - 1)) - 1       << "]"  << endl;
-    cout << "short             : " << sizeof(short)              << "B (" << sizeof(short)*8              << "b)" << " [-"   << (2ULL << (8*sizeof(short) - 2))                    << ", " << (2ULL << (8*sizeof(short) - 2)) - 1     << "]" << endl;
-    cout << "unsigned int      : " << sizeof(unsigned int)       << "B (" << sizeof(unsigned int)*8       << "b)" << " [0, " << (2ULL << (8*sizeof(unsigned int) - 1)) - 1         << "]"  << endl;
-    cout << "int               : " << sizeof(int)                << "B (" << sizeof(int)*8                << "b)" << " [-"   << (2ULL << (8*sizeof(int) - 2))                      << ", " << (2ULL << (8*sizeof(int) - 2)) - 1       << "]" << endl;
-    cout << "unsigned long     : " << sizeof(unsigned long)      << "B (" << sizeof(unsigned long)*8      << "b)" << " [0, " << (2ULL << (8*sizeof(unsigned long) - 1)) - 1        << "]"  << endl;
-    cout << "long              : " << sizeof(long)               << "B (" << sizeof(long)*8               << "b)" << " [-"   << (2ULL << (8*sizeof(long) - 2))                     << ", " << (2ULL << (8*sizeof(long) - 2)) - 1      << "]" << endl;
-    cout << "unsigned long long: " << sizeof(unsigned long long) << "B (" << sizeof(unsigned long long)*8 << "b)" << " [0, " << (2ULL << (8*sizeof(unsigned long long) - 1)) - 1   << "]"  << endl;
-    cout << "long long         : " << sizeof(long long)          << "B (" << sizeof(long long)*8          << "b)" << " [-"   << (2ULL << (8*sizeof(long long) - 2))                << ", " << (2ULL << (8*sizeof(long long) - 2)) - 1 << "]" << endl;
-    cout << "float             : " << sizeof(float)              << "B (" << sizeof(float)*8              << "b)" << endl;
-    cout << "double            : " << sizeof(double)             << "B (" << sizeof(double)*8             << "b)" << endl;
-    cout << "long double       : " << sizeof(long double)        << "B (" << sizeof(long double)*8        << "b)" << endl;
-    exit(0);
-
+    diagnostics::print_dtype_sizes();
     const uint16_t n_valence_protons = std::stoi(argv[1]);
     const uint16_t n_valence_neutrons = std::stoi(argv[2]);
     const string interaction_filename = "./snt/w.snt";

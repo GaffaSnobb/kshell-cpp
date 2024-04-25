@@ -6,6 +6,7 @@
 namespace diagnostics
 {
 void print_hamiltonian_info(const Interaction& interaction);
+void print_dtype_sizes();
 }
 
 #endif
