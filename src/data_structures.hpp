@@ -3,13 +3,14 @@
 
 #include <vector>
 #include <unordered_map>
+#include <stdint.h>
 
 struct Key5
 {
     /*
     Custom struct to be used as a key in a std::unordered_map.
     */
-    unsigned short a, b, c, d, e;
+    uint16_t a, b, c, d, e;
 
     bool operator==(const Key5& other) const
     {
@@ -23,12 +24,12 @@ struct Key6
     Custom struct to be used as a key in a std::unordered_map for the
     Clebsh-Gordan coefficients.
     */
-    unsigned short j1;
-    short m1;
-    unsigned short j2;
-    short m2;
-    unsigned short J;
-    short M;
+    uint16_t j1;
+    int16_t m1;
+    uint16_t j2;
+    int16_t m2;
+    uint16_t J;
+    int16_t M;
 
     bool operator==(const Key6& other) const
     {
@@ -43,11 +44,11 @@ namespace std
     {
         std::size_t operator()(const Key5& k) const
         {   // Compute individual hash values for two data members and combine them using XOR and bit shifting
-            return ((std::hash<unsigned short>()(k.a)
-                ^ (std::hash<unsigned short>()(k.b) << 1)) >> 1)
-                ^ (std::hash<unsigned short>()(k.c)
-                ^ (std::hash<unsigned short>()(k.d) << 1))
-                ^ (std::hash<unsigned short>()(k.e) << 1);
+            return ((std::hash<uint16_t>()(k.a)
+                ^ (std::hash<uint16_t>()(k.b) << 1)) >> 1)
+                ^ (std::hash<uint16_t>()(k.c)
+                ^ (std::hash<uint16_t>()(k.d) << 1))
+                ^ (std::hash<uint16_t>()(k.e) << 1);
         }
     };
     // template<>
@@ -55,11 +56,11 @@ namespace std
     // {
     //     std::size_t operator()(const Key5& k) const
     //     {
-    //         std::size_t h1 = std::hash<unsigned short>()(k.a);
-    //         std::size_t h2 = std::hash<unsigned short>()(k.b);
-    //         std::size_t h3 = std::hash<unsigned short>()(k.c);
-    //         std::size_t h4 = std::hash<unsigned short>()(k.d);
-    //         std::size_t h5 = std::hash<unsigned short>()(k.e);
+    //         std::size_t h1 = std::hash<uint16_t>()(k.a);
+    //         std::size_t h2 = std::hash<uint16_t>()(k.b);
+    //         std::size_t h3 = std::hash<uint16_t>()(k.c);
+    //         std::size_t h4 = std::hash<uint16_t>()(k.d);
+    //         std::size_t h5 = std::hash<uint16_t>()(k.e);
 
     //         // Combine hash values
     //         return ((((h1 ^ (h2 << 1)) >> 1) ^ (h3 << 1)) >> 1) ^ ((h4 ^ (h5 << 1)) << 1);
@@ -78,11 +79,11 @@ namespace std
     //             seed ^= h;
     //         };
 
-    //         hash_combine(std::hash<unsigned short>()(k.a));
-    //         hash_combine(std::hash<unsigned short>()(k.b));
-    //         hash_combine(std::hash<unsigned short>()(k.c));
-    //         hash_combine(std::hash<unsigned short>()(k.d));
-    //         hash_combine(std::hash<unsigned short>()(k.e));
+    //         hash_combine(std::hash<uint16_t>()(k.a));
+    //         hash_combine(std::hash<uint16_t>()(k.b));
+    //         hash_combine(std::hash<uint16_t>()(k.c));
+    //         hash_combine(std::hash<uint16_t>()(k.d));
+    //         hash_combine(std::hash<uint16_t>()(k.e));
 
     //         return seed;
     //     }
@@ -93,12 +94,12 @@ namespace std
     {
         size_t operator()(const Key6& k) const
         {   // Hash individual members and combine them
-            size_t hash_j1 = std::hash<unsigned short>()(k.j1);
-            size_t hash_m1 = std::hash<short>()(k.m1);
-            size_t hash_j2 = std::hash<unsigned short>()(k.j2);
-            size_t hash_m2 = std::hash<short>()(k.m2);
-            size_t hash_J = std::hash<unsigned short>()(k.J);
-            size_t hash_M = std::hash<short>()(k.M);
+            size_t hash_j1 = std::hash<uint16_t>()(k.j1);
+            size_t hash_m1 = std::hash<int16_t>()(k.m1);
+            size_t hash_j2 = std::hash<uint16_t>()(k.j2);
+            size_t hash_m2 = std::hash<int16_t>()(k.m2);
+            size_t hash_J = std::hash<uint16_t>()(k.J);
+            size_t hash_M = std::hash<int16_t>()(k.M);
 
             // Combine these hashes together
             return ((((hash_j1 ^ (hash_m1 << 1)) >> 1) ^ (hash_j2 << 1)) >> 1) ^
@@ -182,29 +183,29 @@ struct Indices
             index 0 and composite m substate indices 0, 1, 2, 3.
 
     */
-    const std::vector<short> composite_m_idx_to_m_map;
-    const std::vector<unsigned short> orbital_idx_to_j_map;
-    const std::vector<std::vector<unsigned short>> orbital_idx_to_composite_m_idx_map;
-    const unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices; // End index of each section.
-    const std::vector<unsigned short> creation_orb_indices_0;
-    const std::vector<unsigned short> creation_orb_indices_1;
-    const std::vector<unsigned short> annihilation_orb_indices_0;
-    const std::vector<unsigned short> annihilation_orb_indices_1;
-    const std::vector<unsigned short> j_coupled;
-    const std::vector<short> m_coupled;
+    const std::vector<int16_t> composite_m_idx_to_m_map;
+    const std::vector<uint16_t> orbital_idx_to_j_map;
+    const std::vector<std::vector<uint16_t>> orbital_idx_to_composite_m_idx_map;
+    const uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices; // End index of each section.
+    const std::vector<uint16_t> creation_orb_indices_0;
+    const std::vector<uint16_t> creation_orb_indices_1;
+    const std::vector<uint16_t> annihilation_orb_indices_0;
+    const std::vector<uint16_t> annihilation_orb_indices_1;
+    const std::vector<uint16_t> j_coupled;
+    const std::vector<int16_t> m_coupled;
     const std::vector<double> tbme;
 
     Indices(
-        std::vector<short> composite_m_idx_to_m_map_,
-        std::vector<unsigned short> orbital_idx_to_j_map_,
-        std::vector<std::vector<unsigned short>> orbital_idx_to_composite_m_idx_map_,
-        unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices_,
-        std::vector<unsigned short> creation_orb_indices_0_,
-        std::vector<unsigned short> creation_orb_indices_1_,
-        std::vector<unsigned short> annihilation_orb_indices_0_,
-        std::vector<unsigned short> annihilation_orb_indices_1_,
-        std::vector<unsigned short> j_coupled_,
-        std::vector<short> m_coupled_,
+        std::vector<int16_t> composite_m_idx_to_m_map_,
+        std::vector<uint16_t> orbital_idx_to_j_map_,
+        std::vector<std::vector<uint16_t>> orbital_idx_to_composite_m_idx_map_,
+        uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices_,
+        std::vector<uint16_t> creation_orb_indices_0_,
+        std::vector<uint16_t> creation_orb_indices_1_,
+        std::vector<uint16_t> annihilation_orb_indices_0_,
+        std::vector<uint16_t> annihilation_orb_indices_1_,
+        std::vector<uint16_t> j_coupled_,
+        std::vector<int16_t> m_coupled_,
         std::vector<double> tbme_
     ) :
     composite_m_idx_to_m_map(composite_m_idx_to_m_map_),
@@ -227,44 +228,44 @@ struct Indices
 
 struct OrbitalParameters
 {
-    const unsigned short n;   // The "principal quantum number".
-    const unsigned short l;   // Orbital angular momentum.
-    const unsigned short j;   // Total angular momentum.
-    const unsigned short degeneracy;
-    const short tz;           // Isospin.
-    const std::vector<short> jz;  // All possible z projections of the total angular momentum vector.
+    const uint16_t n;   // The "principal quantum number".
+    const uint16_t l;   // Orbital angular momentum.
+    const uint16_t j;   // Total angular momentum.
+    const uint16_t degeneracy;
+    const int16_t tz;           // Isospin.
+    const std::vector<int16_t> jz;  // All possible z projections of the total angular momentum vector.
 
     OrbitalParameters(
-        unsigned short n_,
-        unsigned short l_,
-        unsigned short j_,
-        unsigned short degeneracy_,
-        short tz_,
-        std::vector<short> jz_
+        uint16_t n_,
+        uint16_t l_,
+        uint16_t j_,
+        uint16_t degeneracy_,
+        int16_t tz_,
+        std::vector<int16_t> jz_
     ) : n(n_), l(l_), j(j_), degeneracy(degeneracy_), tz(tz_), jz(jz_) {}
 };
 
 struct ModelSpace
 {
     const std::vector<OrbitalParameters> orbitals;
-    const std::vector<short> all_jz_values;
-    const unsigned short n_valence_nucleons;
-    const unsigned short n_orbitals;
+    const std::vector<int16_t> all_jz_values;
+    const uint16_t n_valence_nucleons;
+    const uint16_t n_orbitals;
 
     ModelSpace(
         std::vector<OrbitalParameters> orbitals_,
-        std::vector<short> all_jz_values_,
-        unsigned short n_valence_nucleons_,
-        unsigned short n_orbitals_
+        std::vector<int16_t> all_jz_values_,
+        uint16_t n_valence_nucleons_,
+        uint16_t n_orbitals_
     ) : orbitals(orbitals_), all_jz_values(all_jz_values_), n_valence_nucleons(n_valence_nucleons_), n_orbitals(n_orbitals_) {}
 };
 
 struct Interaction
 {
-    const unsigned short tbme_mass_dependence_method;
-    const unsigned short n_core_protons;
-    const unsigned short n_core_neutrons;
-    const unsigned short n_core_nucleons;
+    const uint16_t tbme_mass_dependence_method;
+    const uint16_t n_core_protons;
+    const uint16_t n_core_neutrons;
+    const uint16_t n_core_nucleons;
     const double tbme_mass_dependence_exponent;
     const double tbme_mass_dependence_denominator;
     const std::vector<double> spe;    // Single-particle energies. The orbital to which they belong is the same as the index of the SPE.
@@ -274,13 +275,13 @@ struct Interaction
     const ModelSpace model_space_neutrons;
     const std::unordered_map<Key5, double> tbme_map;
     const std::vector<Key5> tbme_keys;
-    const std::vector<unsigned long long> basis_states;
+    const std::vector<uint64_t> basis_states;
 
     Interaction(
-        unsigned short tbme_mass_dependence_method_,
-        unsigned short n_core_protons_,
-        unsigned short n_core_neutrons_,
-        unsigned short n_core_nucleons_,
+        uint16_t tbme_mass_dependence_method_,
+        uint16_t n_core_protons_,
+        uint16_t n_core_neutrons_,
+        uint16_t n_core_nucleons_,
         double tbme_mass_dependence_exponent_,
         double tbme_mass_dependence_denominator_,
         std::vector<double> spe_,
@@ -290,7 +291,7 @@ struct Interaction
         ModelSpace model_space_neutrons_,
         std::unordered_map<Key5, double> tbme_map_,
         std::vector<Key5> tbme_keys_,
-        std::vector<unsigned long long> basis_states_
+        std::vector<uint64_t> basis_states_
     ) :
     tbme_mass_dependence_method(tbme_mass_dependence_method_),
     n_core_protons(n_core_protons_),

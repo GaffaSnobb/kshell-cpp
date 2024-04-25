@@ -1,6 +1,8 @@
 #include <vector>
 #include <iostream>
 #include <omp.h>
+#include <stdint.h>
+
 #include "data_structures.hpp"
 #include "generate_indices.hpp"
 #include "tools.hpp"
@@ -19,13 +21,13 @@ namespace hamiltonian
 double calculate_onebody_matrix_element_primitive_bit_representation(
     const Interaction& interaction,
     const Indices& indices,
-    const unsigned long long& left_state,
-    const unsigned long long& right_state
+    const uint64_t& left_state,
+    const uint64_t& right_state
 )
 {
     double onebody_res = 0;
 
-    for (unsigned short creation_orb_idx = 0; creation_orb_idx < interaction.model_space.n_orbitals; creation_orb_idx++)
+    for (uint16_t creation_orb_idx = 0; creation_orb_idx < interaction.model_space.n_orbitals; creation_orb_idx++)
     {
         /*
         More generally, there should also be a loop over the same values
@@ -33,11 +35,11 @@ double calculate_onebody_matrix_element_primitive_bit_representation(
         interaction files, are only defined for when the two indices are
         the same.
         */
-        const unsigned short annihilation_orb_idx = creation_orb_idx;
+        const uint16_t annihilation_orb_idx = creation_orb_idx;
     
-        for (unsigned short creation_comp_m_idx : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx])
+        for (uint16_t creation_comp_m_idx : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx])
         {
-            for (unsigned short annihilation_comp_m_idx : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx])
+            for (uint16_t annihilation_comp_m_idx : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx])
             {
                 /*
                 Index scheme for the sd model space:
@@ -71,7 +73,7 @@ double calculate_onebody_matrix_element_primitive_bit_representation(
                 substates. For example, proton d3/2 has orbital index 0
                 and composite m substate indices 0, 1, 2, 3.
                 */
-                unsigned long long new_right_state = right_state;   // The contents of right_state is copied, not referenced.
+                uint64_t new_right_state = right_state;   // The contents of right_state is copied, not referenced.
 
                 if (not bittools::is_bit_set(new_right_state, annihilation_comp_m_idx))
                 {
@@ -101,8 +103,8 @@ double calculate_onebody_matrix_element_primitive_bit_representation(
                     continue;
                 }
 
-                const unsigned short n_operator_swaps_annihilation = bittools::reset_bit_and_count_swaps(new_right_state, annihilation_comp_m_idx);
-                const short annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation);
+                const uint16_t n_operator_swaps_annihilation = bittools::reset_bit_and_count_swaps(new_right_state, annihilation_comp_m_idx);
+                const int16_t annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation);
 
                 if (bittools::is_bit_set(new_right_state, creation_comp_m_idx))
                 {
@@ -113,8 +115,8 @@ double calculate_onebody_matrix_element_primitive_bit_representation(
                     */
                     continue;
                 }
-                const unsigned short n_operator_swaps_creation = bittools::set_bit_and_count_swaps(new_right_state, creation_comp_m_idx);
-                const short creation_sign = bittools::negative_one_pow(n_operator_swaps_creation);
+                const uint16_t n_operator_swaps_creation = bittools::set_bit_and_count_swaps(new_right_state, creation_comp_m_idx);
+                const int16_t creation_sign = bittools::negative_one_pow(n_operator_swaps_creation);
 
                 if (left_state != new_right_state)
                 {
@@ -136,14 +138,14 @@ double calculate_onebody_matrix_element_primitive_bit_representation(
 double calculate_twobody_matrix_element_primitive_bit_representation(
     const Interaction& interaction,
     const Indices& indices,
-    const unsigned long long& left_state,
-    const unsigned long long& right_state
+    const uint64_t& left_state,
+    const uint64_t& right_state
 )
 {
     double twobody_res = 0;
     // double creation_res_switch = 0; // For removing if statements in the inner creation loop. Multiply the result by 0 instead of using if (condition) continue;.
-    const unsigned int n_indices = indices.creation_orb_indices_0.size();
-    for (unsigned int i = 0; i < n_indices; i++)
+    const uint32_t n_indices = indices.creation_orb_indices_0.size();
+    for (size_t i = 0; i < n_indices; i++)
     {
         /*
         The values in the following vectors corresponds to using these
@@ -161,21 +163,21 @@ double calculate_twobody_matrix_element_primitive_bit_representation(
         It gives good reduction in program run time by using
         pre-calculated indices instead of four nested loops.
         */
-        const unsigned short creation_orb_idx_0 = indices.creation_orb_indices_0[i];
-        const unsigned short creation_orb_idx_1 = indices.creation_orb_indices_1[i];
-        const unsigned short annihilation_orb_idx_0 = indices.annihilation_orb_indices_0[i];
-        const unsigned short annihilation_orb_idx_1 = indices.annihilation_orb_indices_1[i];
-        const unsigned short j_coupled = indices.j_coupled[i];
-        const short m_coupled = indices.m_coupled[i];
+        const uint16_t creation_orb_idx_0 = indices.creation_orb_indices_0[i];
+        const uint16_t creation_orb_idx_1 = indices.creation_orb_indices_1[i];
+        const uint16_t annihilation_orb_idx_0 = indices.annihilation_orb_indices_0[i];
+        const uint16_t annihilation_orb_idx_1 = indices.annihilation_orb_indices_1[i];
+        const uint16_t j_coupled = indices.j_coupled[i];
+        const int16_t m_coupled = indices.m_coupled[i];
         const double tbme = indices.tbme[i];
 
         const double creation_norm = 1/std::sqrt(1 + (creation_orb_idx_0 == creation_orb_idx_1));
         const double annihilation_norm = 1/std::sqrt(1 + (annihilation_orb_idx_0 == annihilation_orb_idx_1));
 
         // Annihilation terms
-        for (unsigned short annihilation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0])
+        for (uint16_t annihilation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0])
         {
-            for (unsigned short annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
+            for (uint16_t annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
             {
                 // if (not right_state.test(annihilation_comp_m_idx_0))
                 if (not bittools::is_bit_set(right_state, annihilation_comp_m_idx_0))
@@ -206,13 +208,13 @@ double calculate_twobody_matrix_element_primitive_bit_representation(
                     continue;
                 }
 
-                unsigned long long new_right_state_annihilation = right_state;
-                const unsigned short n_operator_swaps_annihilation_0 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_0);
-                short annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation_0);
+                uint64_t new_right_state_annihilation = right_state;
+                const uint16_t n_operator_swaps_annihilation_0 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_0);
+                int16_t annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation_0);
 
                 // if (not new_right_state_annihilation.test(annihilation_comp_m_idx_1)) continue;
                 if (not bittools::is_bit_set(new_right_state_annihilation, annihilation_comp_m_idx_1)) continue;
-                const unsigned short n_operator_swaps_annihilation_1 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
+                const uint16_t n_operator_swaps_annihilation_1 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
                 annihilation_sign *= bittools::negative_one_pow(n_operator_swaps_annihilation_1);
 
                 const Key6 annihilation_key = {
@@ -230,9 +232,9 @@ double calculate_twobody_matrix_element_primitive_bit_representation(
                 // Creation terms
                 double creation_res = 0.0;
 
-                for (unsigned short creation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_0])
+                for (uint16_t creation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_0])
                 {
-                    for (unsigned short creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
+                    for (uint16_t creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
                     {
                         /*
                         Performance notes
@@ -252,14 +254,14 @@ double calculate_twobody_matrix_element_primitive_bit_representation(
                         if (bittools::is_bit_set(new_right_state_annihilation, creation_comp_m_idx_1)) continue;
                         // creation_res_switch = (not new_right_state_annihilation[creation_comp_m_idx_1]);
                         
-                        unsigned long long new_right_state_creation = new_right_state_annihilation;
-                        const unsigned short n_operator_swaps_creation_1 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_1);
-                        short creation_sign = bittools::negative_one_pow(n_operator_swaps_creation_1);
+                        uint64_t new_right_state_creation = new_right_state_annihilation;
+                        const uint16_t n_operator_swaps_creation_1 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_1);
+                        int16_t creation_sign = bittools::negative_one_pow(n_operator_swaps_creation_1);
 
                         if (bittools::is_bit_set(new_right_state_annihilation, creation_comp_m_idx_0)) continue;
                         // creation_res_switch *= (not new_right_state_annihilation[creation_comp_m_idx_0]);
                         
-                        const unsigned short n_operator_swaps_creation_0 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_0);
+                        const uint16_t n_operator_swaps_creation_0 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_0);
                         creation_sign *= bittools::negative_one_pow(n_operator_swaps_creation_0);
 
                         if (left_state != new_right_state_creation) continue;
@@ -289,33 +291,33 @@ double calculate_twobody_matrix_element_primitive_bit_representation(
 double calculate_twobody_matrix_element_primitive_bit_representation_new(
     const Interaction& interaction,
     const Indices& indices,
-    const unsigned long long& left_state,
-    const unsigned long long& right_state
+    const uint64_t& left_state,
+    const uint64_t& right_state
 )
 {
-    unsigned short j1_idx, m1_idx, j2_idx, m2_idx, j3_idx;  // Indices for the Clebsch-Gordan 5D array...
-    unsigned short flat_cg_idx;                             // ...translated to a flattened 1D array.
+    uint16_t j1_idx, m1_idx, j2_idx, m2_idx, j3_idx;  // Indices for the Clebsch-Gordan 5D array...
+    uint16_t flat_cg_idx;                             // ...translated to a flattened 1D array.
 
     double twobody_res = 0;
     // double creation_res_switch = 0; // For removing if statements in the inner creation loop. Multiply the result by 0 instead of using if (condition) continue;.
-    const unsigned int n_indices = indices.creation_orb_indices_0.size();
-    for (unsigned int i = 0; i < n_indices; i++)
+    const uint32_t n_indices = indices.creation_orb_indices_0.size();
+    for (size_t i = 0; i < n_indices; i++)
     {
-        const unsigned short creation_orb_idx_0 = indices.creation_orb_indices_0[i];
-        const unsigned short creation_orb_idx_1 = indices.creation_orb_indices_1[i];
-        const unsigned short annihilation_orb_idx_0 = indices.annihilation_orb_indices_0[i];
-        const unsigned short annihilation_orb_idx_1 = indices.annihilation_orb_indices_1[i];
-        const unsigned short j_coupled = indices.j_coupled[i];
-        const short m_coupled = indices.m_coupled[i];
+        const uint16_t creation_orb_idx_0 = indices.creation_orb_indices_0[i];
+        const uint16_t creation_orb_idx_1 = indices.creation_orb_indices_1[i];
+        const uint16_t annihilation_orb_idx_0 = indices.annihilation_orb_indices_0[i];
+        const uint16_t annihilation_orb_idx_1 = indices.annihilation_orb_indices_1[i];
+        const uint16_t j_coupled = indices.j_coupled[i];
+        const int16_t m_coupled = indices.m_coupled[i];
         const double tbme = indices.tbme[i];
 
         const double creation_norm = inverse_sqrt_2[creation_orb_idx_0 == creation_orb_idx_1];
         const double annihilation_norm = inverse_sqrt_2[annihilation_orb_idx_0 == annihilation_orb_idx_1];
 
         // Annihilation terms
-        for (unsigned short annihilation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0])
+        for (uint16_t annihilation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0])
         {
-            for (unsigned short annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
+            for (uint16_t annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
             {
                 if (
                     (indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0] +  // m1
@@ -335,13 +337,13 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                 // if (not right_state.test(annihilation_comp_m_idx_0))
                 if (not bittools::is_bit_set(right_state, annihilation_comp_m_idx_0)) continue;
 
-                unsigned long long new_right_state_annihilation = right_state;
-                const unsigned short n_operator_swaps_annihilation_0 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_0);
-                short annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation_0);
+                uint64_t new_right_state_annihilation = right_state;
+                const uint16_t n_operator_swaps_annihilation_0 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_0);
+                int16_t annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation_0);
 
                 // if (not new_right_state_annihilation.test(annihilation_comp_m_idx_1)) continue;
                 if (not bittools::is_bit_set(new_right_state_annihilation, annihilation_comp_m_idx_1)) continue;
-                const unsigned short n_operator_swaps_annihilation_1 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
+                const uint16_t n_operator_swaps_annihilation_1 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
                 annihilation_sign *= bittools::negative_one_pow(n_operator_swaps_annihilation_1);
                 
                 j1_idx = (indices.orbital_idx_to_j_map[annihilation_orb_idx_0] + 1)/2 - 1;
@@ -356,9 +358,9 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                 // Creation terms
                 double creation_res = 0.0;
 
-                for (unsigned short creation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_0])
+                for (uint16_t creation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_0])
                 {
-                    for (unsigned short creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
+                    for (uint16_t creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
                     {   
                         if (
                             (indices.composite_m_idx_to_m_map[creation_comp_m_idx_0] +  // m1
@@ -377,14 +379,14 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
                         if (bittools::is_bit_set(new_right_state_annihilation, creation_comp_m_idx_1)) continue;
                         // creation_res_switch = (not new_right_state_annihilation[creation_comp_m_idx_1]);
                         
-                        unsigned long long new_right_state_creation = new_right_state_annihilation;
-                        const unsigned short n_operator_swaps_creation_1 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_1);
-                        short creation_sign = bittools::negative_one_pow(n_operator_swaps_creation_1);
+                        uint64_t new_right_state_creation = new_right_state_annihilation;
+                        const uint16_t n_operator_swaps_creation_1 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_1);
+                        int16_t creation_sign = bittools::negative_one_pow(n_operator_swaps_creation_1);
 
                         if (bittools::is_bit_set(new_right_state_annihilation, creation_comp_m_idx_0)) continue;
                         // creation_res_switch *= (not new_right_state_annihilation[creation_comp_m_idx_0]);
                         
-                        const unsigned short n_operator_swaps_creation_0 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_0);
+                        const uint16_t n_operator_swaps_creation_0 = bittools::set_bit_and_count_swaps(new_right_state_creation, creation_comp_m_idx_0);
                         creation_sign *= bittools::negative_one_pow(n_operator_swaps_creation_0);
 
                         if (left_state != new_right_state_creation) continue;
@@ -411,11 +413,11 @@ double calculate_twobody_matrix_element_primitive_bit_representation_new(
 
 void create_hamiltonian_primitive_bit_representation_new(const Interaction& interaction, const Indices& indices, double* H)
 {
-    const unsigned int m_dim = interaction.basis_states.size();
+    const uint32_t m_dim = interaction.basis_states.size();
 
     auto start = timer();
     #pragma omp parallel for
-    for (unsigned int idx = 0; idx < m_dim; idx++)
+    for (size_t idx = 0; idx < m_dim; idx++)
     {
         /*
         As long as the single-particle energies are defined only when
@@ -432,16 +434,16 @@ void create_hamiltonian_primitive_bit_representation_new(const Interaction& inte
     timer(start, "[HOST][NEW] one-body calc time");
 
     start = timer();
-    int thread_id = omp_get_thread_num();
+    int32_t thread_id = omp_get_thread_num();
     std::vector<long long> loop_timings;
     auto loop_timer = timer();
 
-    for (unsigned int row_idx = 0; row_idx < m_dim; row_idx++)
+    for (size_t row_idx = 0; row_idx < m_dim; row_idx++)
     {   
         if (thread_id == 0) loop_timer = timer();
         
         #pragma omp parallel for //num_threads(1)
-        for (int col_idx = row_idx; col_idx < m_dim; col_idx++)
+        for (size_t col_idx = row_idx; col_idx < m_dim; col_idx++)
         {    
             H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation_new(
                 interaction,
@@ -463,11 +465,11 @@ void create_hamiltonian_primitive_bit_representation_new(const Interaction& inte
 
 void create_hamiltonian_primitive_bit_representation_reference(const Interaction& interaction, const Indices& indices, double* H)
 {
-    const unsigned int m_dim = interaction.basis_states.size();
+    const uint32_t m_dim = interaction.basis_states.size();
 
     auto start = timer();
     #pragma omp parallel for
-    for (unsigned int idx = 0; idx < m_dim; idx++)
+    for (size_t idx = 0; idx < m_dim; idx++)
     {
         /*
         As long as the single-particle energies are defined only when
@@ -483,33 +485,33 @@ void create_hamiltonian_primitive_bit_representation_reference(const Interaction
     }
     timer(start, "[HOST][REFERENCE] one-body calc time");
 
-    start = timer();
-    int thread_id = omp_get_thread_num();
-    std::vector<long long> loop_timings;
-    auto loop_timer = timer();
+    // start = timer();
+    // int32_t thread_id = omp_get_thread_num();
+    // std::vector<long long> loop_timings;
+    // auto loop_timer = timer();
 
-    for (unsigned int row_idx = 0; row_idx < m_dim; row_idx++)
-    {   
-        if (thread_id == 0) loop_timer = timer();
+    // for (size_t row_idx = 0; row_idx < m_dim; row_idx++)
+    // {   
+    //     if (thread_id == 0) loop_timer = timer();
         
-        #pragma omp parallel for
-        for (int col_idx = row_idx; col_idx < m_dim; col_idx++)
-        {    
-            H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation(
-                interaction,
-                indices,
-                interaction.basis_states[row_idx],
-                interaction.basis_states[col_idx]
-            );
-        }
-        if ((thread_id == 0) and (row_idx%10 == 0))
-        {
-            loop_timings.push_back(timer(loop_timer));
-            print_loop_timer(loop_timings, row_idx, m_dim);
-        }
-    }
-    cout << endl;   // For the progress bar.
-    timer(start, "[HOST][REFERENCE] two-body calc time");
+    //     #pragma omp parallel for
+    //     for (size_t col_idx = row_idx; col_idx < m_dim; col_idx++)
+    //     {    
+    //         H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation(
+    //             interaction,
+    //             indices,
+    //             interaction.basis_states[row_idx],
+    //             interaction.basis_states[col_idx]
+    //         );
+    //     }
+    //     if ((thread_id == 0) and (row_idx%10 == 0))
+    //     {
+    //         loop_timings.push_back(timer(loop_timer));
+    //         print_loop_timer(loop_timings, row_idx, m_dim);
+    //     }
+    // }
+    // cout << endl;   // For the progress bar.
+    // timer(start, "[HOST][REFERENCE] two-body calc time");
     // complete_hermitian_matrix(H);
 }
 }

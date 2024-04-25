@@ -3,7 +3,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <cmath>
-#include <filesystem>
+#include <stdint.h>
 
 #include "tools.hpp"
 #include "data_structures.hpp"
@@ -17,11 +17,11 @@ namespace loaders
 void make_tbme_map(
     std::unordered_map<Key5, double>& tbme_map,
     std::vector<Key5>& tbme_keys,
-    std::vector<unsigned short>& orb_0,
-    std::vector<unsigned short>& orb_1,
-    std::vector<unsigned short>& orb_2,
-    std::vector<unsigned short>& orb_3,
-    std::vector<unsigned short>& j_couple,
+    std::vector<uint16_t>& orb_0,
+    std::vector<uint16_t>& orb_1,
+    std::vector<uint16_t>& orb_2,
+    std::vector<uint16_t>& orb_3,
+    std::vector<uint16_t>& j_couple,
     std::vector<double>& tbme_list,
     std::vector<OrbitalParameters> model_space_orbitals,
     double tbme_mass_dependence_factor
@@ -35,13 +35,13 @@ void make_tbme_map(
     The value of the unordered map is the corresponding TBME.
     */
     auto start = timer();
-    for (int i = 0; i < tbme_list.size(); i++)
+    for (size_t i = 0; i < tbme_list.size(); i++)
     {   
-        unsigned short i0 = orb_0[i];
-        unsigned short i1 = orb_1[i];
-        unsigned short i2 = orb_2[i];
-        unsigned short i3 = orb_3[i];
-        unsigned short j = j_couple[i];
+        uint16_t i0 = orb_0[i];
+        uint16_t i1 = orb_1[i];
+        uint16_t i2 = orb_2[i];
+        uint16_t i3 = orb_3[i];
+        uint16_t j = j_couple[i];
         double tbme = tbme_list[i];
 
         Key5 key = {i0, i1, i2, i3, j};
@@ -49,8 +49,8 @@ void make_tbme_map(
         bool success = tbme_map.insert({key, tbme*tbme_mass_dependence_factor}).second;
         if (!success) throw std::runtime_error("Hash collision detected");
 
-        short sign_01 = std::pow(-1, (model_space_orbitals[i0].j + model_space_orbitals[i1].j)/2 - j + 1);
-        short sign_23 = std::pow(-1, (model_space_orbitals[i2].j + model_space_orbitals[i3].j)/2 - j + 1);
+        int16_t sign_01 = std::pow(-1, (model_space_orbitals[i0].j + model_space_orbitals[i1].j)/2 - j + 1);
+        int16_t sign_23 = std::pow(-1, (model_space_orbitals[i2].j + model_space_orbitals[i3].j)/2 - j + 1);
 
         /*
         The following network of if statements is taken from KSHELL's
@@ -113,8 +113,8 @@ void make_tbme_map(
 
 Interaction load_interaction(
     const std::string& interaction_filename,
-    const unsigned short n_valence_protons,
-    const unsigned short n_valence_neutrons
+    const uint16_t n_valence_protons,
+    const uint16_t n_valence_neutrons
 )
 {
     /*
@@ -123,10 +123,10 @@ Interaction load_interaction(
     Calculate the m basis states.
     */
     auto start = timer();
-    std::vector<unsigned short> orb_0, orb_1, orb_2, orb_3, j_couple;
-    std::vector<short> all_jz_values_protons;
-    std::vector<short> all_jz_values_neutrons;
-    std::vector<short> all_jz_values;
+    std::vector<uint16_t> orb_0, orb_1, orb_2, orb_3, j_couple;
+    std::vector<int16_t> all_jz_values_protons;
+    std::vector<int16_t> all_jz_values_neutrons;
+    std::vector<int16_t> all_jz_values;
     std::vector<double> tbme, spe;
 
     std::vector<OrbitalParameters> model_space_protons_orbitals;
@@ -136,16 +136,16 @@ Interaction load_interaction(
     check_if_file_exists(interaction_filename);
     std::ifstream infile(interaction_filename);
     std::string line;
-    unsigned int n_tbme;    // gs8.snt has over 10k TBMEs. short is enough for this, but other interactions might have even more.
-    unsigned short tbme_mass_dependence_method;
-    unsigned short n_proton_orbitals = 0;
-    unsigned short n_neutron_orbitals = 0;
-    unsigned short n_spe = 0;
-    unsigned short n_core_neutrons;
-    unsigned short n_core_protons;
+    uint32_t n_tbme;    // gs8.snt has over 10k TBMEs. uint16_t is enough for this, but other interactions might have even more.
+    uint16_t tbme_mass_dependence_method;
+    uint16_t n_proton_orbitals = 0;
+    uint16_t n_neutron_orbitals = 0;
+    uint16_t n_spe = 0;
+    uint16_t n_core_neutrons;
+    uint16_t n_core_protons;
     double tbme_mass_dependence_exponent;
     double tbme_mass_dependence_denominator;
-    int _;  // Garbage.
+    int32_t _;  // Garbage.
 
     while (std::getline(infile, line))
     {
@@ -172,7 +172,7 @@ Interaction load_interaction(
         }
     }
 
-    for (int i = 0; i < n_proton_orbitals; i++)
+    for (size_t i = 0; i < n_proton_orbitals; i++)
     {
         /*
         ! model space
@@ -187,18 +187,18 @@ Interaction load_interaction(
         */
         std::getline(infile, line);
         std::istringstream iss(line);
-        unsigned short n_tmp, l_tmp, j_tmp, degeneracy_tmp;
-        short tz_tmp;
+        uint16_t n_tmp, l_tmp, j_tmp, degeneracy_tmp;
+        int16_t tz_tmp;
         iss >> _ >> n_tmp >> l_tmp >> j_tmp >> tz_tmp;
         degeneracy_tmp = j_tmp + 1;
-        std::vector<short> jz_tmp = range<short>(-j_tmp, j_tmp + 1, 2);
+        std::vector<int16_t> jz_tmp = range<int16_t>(-j_tmp, j_tmp + 1, 2);
         all_jz_values.insert(all_jz_values.end(), jz_tmp.begin(), jz_tmp.end());
         all_jz_values_protons.insert(all_jz_values_protons.end(), jz_tmp.begin(), jz_tmp.end());
         model_space_protons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
         model_space_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
     }
 
-    for (int i = 0; i < n_neutron_orbitals; i++)
+    for (size_t i = 0; i < n_neutron_orbitals; i++)
     {
         /*
         ! model space
@@ -213,11 +213,11 @@ Interaction load_interaction(
         */
         std::getline(infile, line);
         std::istringstream iss(line);
-        unsigned short n_tmp, l_tmp, j_tmp, degeneracy_tmp;
-        short tz_tmp;
+        uint16_t n_tmp, l_tmp, j_tmp, degeneracy_tmp;
+        int16_t tz_tmp;
         iss >> _ >> n_tmp >> l_tmp >> j_tmp >> tz_tmp;
         degeneracy_tmp = j_tmp + 1;
-        std::vector<short> jz_tmp = range<short>(-j_tmp, j_tmp + 1, 2);
+        std::vector<int16_t> jz_tmp = range<int16_t>(-j_tmp, j_tmp + 1, 2);
         all_jz_values.insert(all_jz_values.end(), jz_tmp.begin(), jz_tmp.end());
         all_jz_values_neutrons.insert(all_jz_values_neutrons.end(), jz_tmp.begin(), jz_tmp.end());
         model_space_neutrons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
@@ -251,7 +251,7 @@ Interaction load_interaction(
 
     double* spe_array = new double[n_spe];
 
-    for (int i = 0; i < n_spe; i++)
+    for (size_t i = 0; i < n_spe; i++)
     {
         /*
         Read the single-particle energies. Example:
@@ -278,7 +278,7 @@ Interaction load_interaction(
     std::istringstream iss(line);
     iss >> n_tbme >> tbme_mass_dependence_method >> tbme_mass_dependence_denominator >> tbme_mass_dependence_exponent;
 
-    for (int i = 0; i < n_tbme; i++)
+    for (size_t i = 0; i < n_tbme; i++)
     {
         /*
         Read the two-body matrix elements. Example:
@@ -293,7 +293,7 @@ Interaction load_interaction(
         */
         std::getline(infile, line);
         std::istringstream iss(line);
-        unsigned short orb_0_tmp, orb_1_tmp, orb_2_tmp, orb_3_tmp, j_couple_tmp;
+        uint16_t orb_0_tmp, orb_1_tmp, orb_2_tmp, orb_3_tmp, j_couple_tmp;
         double tbme_tmp;
         
         iss >> orb_0_tmp >> orb_1_tmp >> orb_2_tmp >> orb_3_tmp >> j_couple_tmp >> tbme_tmp;
@@ -324,7 +324,7 @@ Interaction load_interaction(
         /*
         The TBMEs need to be scaled according to mass dependence 1.
         */
-        unsigned short nucleus_mass = n_core_neutrons + n_core_protons + n_valence_protons + n_valence_neutrons;
+        uint16_t nucleus_mass = n_core_neutrons + n_core_protons + n_valence_protons + n_valence_neutrons;
         tbme_mass_dependence_factor = std::pow(nucleus_mass/tbme_mass_dependence_denominator, tbme_mass_dependence_exponent);
     }
     else
