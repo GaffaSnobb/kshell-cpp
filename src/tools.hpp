@@ -18,7 +18,8 @@ using std::chrono::milliseconds;
 using std::string;
 
 // void print_bit_representation(uint16_t state);
-void complete_hermitian_matrix(Eigen::MatrixXd& matrix);
+void complete_symmetric_matrix(Eigen::MatrixXd& matrix);
+vector<double> read_symmetric_matrix(const string& filename);
 void print(vector<OrbitalParameters> orbitals);
 void print_vector(const vector<std::bitset<n_bits_bitset>>& vec);
 void print_vector(const vector<Key5>& vec);
@@ -36,8 +37,11 @@ void print_flattened_2d_array(const T1* arr, const T2 size);
 template <typename T1, typename T2>
 void write_flattened_2d_array_to_file(const T1* arr, const T2 size, const string& filename);
 
-template <typename T1, typename T2>
-bool compare_arrays(T1* arr1, T1* arr2, T2 size);
+template <typename T1, typename T2, typename T3>
+bool compare_arrays(T1* arr1, T2* arr2, T3 size);
+
+template <typename T1, typename T2, typename T3>
+bool compare_arrays_upper_triangle(T1* arr1, vector<T2> arr2, T3 size);
 
 template <typename T>
 void print_bit_representation(const T& value);

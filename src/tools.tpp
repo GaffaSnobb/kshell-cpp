@@ -27,8 +27,8 @@ void print_flattened_2d_array(const T1* arr, const T2 size)
 }
 
 template <typename T1, typename T2>
-void write_flattened_2d_array_to_file(const T1* arr, const T2 size, const string& filename)
-{
+void write_flattened_2d_array_to_file(T1* arr, const T2 size, const std::string& filename)
+{   
     std::ofstream file(filename);
 
     if (!file.is_open())
@@ -39,9 +39,22 @@ void write_flattened_2d_array_to_file(const T1* arr, const T2 size, const string
 
     for (size_t row_idx = 0; row_idx < size; row_idx++)
     {
+        /*
+        Copies the values from the upper triangle to the lower triangle.
+        */
+        for (size_t col_idx = row_idx + 1; col_idx < size; col_idx++)
+        {
+            arr[col_idx*size + row_idx] = arr[row_idx*size + col_idx];
+        }
+    }
+
+    size_t max_width = 15;
+
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
+    {
         for (size_t col_idx = 0; col_idx < size; col_idx++)
         {
-            file << arr[row_idx * size + col_idx] << ", ";
+            file << std::left << std::setw(max_width) << arr[row_idx*size + col_idx];
         }
         file << '\n';
     }
@@ -50,10 +63,32 @@ void write_flattened_2d_array_to_file(const T1* arr, const T2 size, const string
     file.close();
 }
 
-template <typename T1, typename T2>
-bool compare_arrays(T1* arr1, T1* arr2, T2 size)
+
+template <typename T1, typename T2, typename T3>
+bool compare_arrays(T1* arr1, T2* arr2, T3 size)
 {
     for (size_t i = 0; i < size; i++) if (std::abs(arr1[i] - arr2[i]) > 1e-13) return false;
+    return true;
+}
+
+template <typename T1, typename T2, typename T3>
+bool compare_arrays_upper_triangle(T1* arr1, vector<T2> arr2, T3 size)
+{
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
+    {
+        for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+        {
+            size_t flat_idx = row_idx*size + col_idx;
+            if (std::abs(arr1[flat_idx] - arr2[flat_idx]) > 1e-3)
+            {   
+                // cout << "flat_idx: " << flat_idx << ", arr1[flat_idx]: " << arr1[flat_idx] << ", arr2[flat_idx]: " << arr2[flat_idx] << ", " << std::abs(arr1[flat_idx] - arr2[flat_idx]) << endl;
+                // cout << "LOL" << endl;
+                // cout << (arr1[flat_idx] - arr2[flat_idx]) << endl;
+                // exit(0);
+                return false;
+            }
+        }
+    }
     return true;
 }
 

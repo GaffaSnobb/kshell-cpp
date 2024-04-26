@@ -13,6 +13,7 @@
 
 using std::cout;
 using std::endl;
+using std::cerr;
 using std::vector;
 using std::chrono::time_point;
 using std::chrono::high_resolution_clock;
@@ -20,15 +21,11 @@ using std::chrono::milliseconds;
 using std::string;
 
 // void complete_hermitian_matrix(Eigen::MatrixXcd& matrix) // For complex values.
-void complete_hermitian_matrix(Eigen::MatrixXd& matrix)
+void complete_symmetric_matrix(Eigen::MatrixXd& matrix)
 {
     /*
     Copies the values from the upper triangle to the lower triangle.
     Does not copy the diagonal.
-
-    This function will probably be removed soon since its not really
-    necessary to explicitly store the other triangle when we know that
-    the matrix is Hermitian.
     */
     auto start = timer();
     int32_t rows = matrix.rows();
@@ -43,6 +40,36 @@ void complete_hermitian_matrix(Eigen::MatrixXd& matrix)
         }
     }
     timer(start, "complete_hermitian_matrix");
+}
+
+vector<double> read_symmetric_matrix(const string& filename)
+{
+    /*
+    Read the ref. matrices which are written to text file.
+    */
+    std::ifstream file(filename);
+    string line;
+    vector<double> matrix;
+    
+    if (!file.is_open())
+    {
+        cerr << "read_symmetric_matrix: Error opening file." << endl;
+        exit(0);
+    }
+
+    while (std::getline(file, line))
+    {
+        std::istringstream iss(line);
+        vector<double> row;
+        double value;
+
+        while (iss >> value) row.push_back(value);
+
+        matrix.insert(matrix.end(), row.begin(), row.end());
+    }
+
+    file.close();
+    return matrix;
 }
 
 void print(vector<OrbitalParameters> orbitals)
