@@ -1,19 +1,21 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <vector>
 #include <type_traits>
 #include <numeric>
 #include <omp.h>
+#include <stdint.h>
 
 using std::cout;
 using std::endl;
 
 template <typename T1, typename T2>
-void print_flattened_2d_array(T1* arr, T2 size)
+void print_flattened_2d_array(const T1* arr, const T2 size)
 {
-    for (int row_idx = 0; row_idx < size; row_idx++)
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
     {
-        for (int col_idx = 0; col_idx < size; col_idx++)
+        for (size_t col_idx = 0; col_idx < size; col_idx++)
         {
             cout << arr[row_idx*size + col_idx] << ", ";
         }
@@ -23,9 +25,33 @@ void print_flattened_2d_array(T1* arr, T2 size)
 }
 
 template <typename T1, typename T2>
+void write_flattened_2d_array_to_file(const T1* arr, const T2 size, const std::string& filename)
+{
+    std::ofstream file(filename);
+
+    if (!file.is_open())
+    {
+        std::cerr << "Error opening file for writing." << std::endl;
+        return;
+    }
+
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
+    {
+        for (size_t col_idx = 0; col_idx < size; col_idx++)
+        {
+            file << arr[row_idx * size + col_idx] << ", ";
+        }
+        file << '\n';
+    }
+    file << '\n';
+
+    file.close();
+}
+
+template <typename T1, typename T2>
 bool compare_arrays(T1* arr1, T1* arr2, T2 size)
 {
-    for (int i = 0; i < size; i++) if (std::abs(arr1[i] - arr2[i]) > 1e-13) return false;
+    for (size_t i = 0; i < size; i++) if (std::abs(arr1[i] - arr2[i]) > 1e-13) return false;
     return true;
 }
 
@@ -134,7 +160,7 @@ template <typename T0, typename T1, typename T2>
 void print_loop_timer(std::vector<T0>& loop_timings, T1 idx, T2 n_iterations)
 {
     double mean_time = mean(loop_timings)/1000;
-    int num_threads = omp_get_num_threads();
+    int32_t num_threads = omp_get_num_threads();
     
     cout << "\r[" << idx << " of ≈ " << (double)n_iterations/num_threads << "]";
     cout << " [loop time: ";

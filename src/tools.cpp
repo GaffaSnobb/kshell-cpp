@@ -4,6 +4,8 @@
 #include <bitset>
 #include <filesystem>
 #include <stdexcept>
+#include <stdint.h>
+
 #include "parameters.hpp"
 #include "tools.hpp"
 #include "data_structures.hpp"
@@ -24,12 +26,12 @@ void complete_hermitian_matrix(Eigen::MatrixXd& matrix)
     the matrix is Hermitian.
     */
     auto start = timer();
-    int rows = matrix.rows();
-    int cols = matrix.cols();
+    int32_t rows = matrix.rows();
+    int32_t cols = matrix.cols();
 
-    for (int row_idx = 0; row_idx < rows; row_idx++)
+    for (size_t row_idx = 0; row_idx < rows; row_idx++)
     {
-        for (int col_idx = row_idx + 1; col_idx < cols; col_idx++)
+        for (size_t col_idx = row_idx + 1; col_idx < cols; col_idx++)
         {
             // matrix(col_idx, row_idx) = std::conj(matrix(row_idx, col_idx));  // For complex values.
             matrix(col_idx, row_idx) = matrix(row_idx, col_idx);
@@ -57,7 +59,7 @@ void print_vector(const std::vector<std::bitset<n_bits_bitset>>& vec)
     {
         bool first_value = true;
         cout << val << ": [";
-        for (int i = 0; i < n_bits_bitset; i++)
+        for (size_t i = 0; i < n_bits_bitset; i++)
         {
             if (val.test(i))
             {
@@ -83,27 +85,27 @@ void print(const Key6& key)
     cout << "{" << key.j1 << ", " << key.m1 << ", " << key.j2 << ", " << key.m2 << ", " << key.J << ", " << key.M << "}," << endl;
 }
 
-short index(const std::vector<unsigned short>& vec, const unsigned short value)
+int16_t index(const std::vector<uint16_t>& vec, const uint16_t value)
 {
     /*
     Returns the index of the first occurence of `value` in `vec`. If
     `value` is not found, -1 is returned. Assumes that `vec` is short
-    enough to be indexed by a short.
+    enough to be indexed by a int16_t.
 
     Using std::find and std::distance has practically identical
     computation time at -Ofast.
     
     Parameters
     ----------
-    vec : std::vector<unsigned short>
+    vec : std::vector<uint16_t>
         The vector to search in.
     
-    value : unsigned short
+    value : uint16_t
         The value to search for.
 
     Returns
     -------
-    short
+    int16_t
         The index of the first occurence of `value` in `vec`. If
         `value` is not found, -1 is returned.
     */
@@ -111,22 +113,22 @@ short index(const std::vector<unsigned short>& vec, const unsigned short value)
 
     // if (it != vec.end())
     // {
-    //     short idx = std::distance(vec.begin(), it);
+    //     int16_t idx = std::distance(vec.begin(), it);
     //     return idx;
     // }
     // else return -1;
-    short size = static_cast<short>(vec.size());
-    for (short res = 0; res < size; res++)
+    int16_t size = static_cast<int16_t>(vec.size());
+    for (int16_t res = 0; res < size; res++)
     {
         if (vec[res] == value) return res;
     }
     return -1;
 }
 
-short check_existence_and_bisect(const std::vector<unsigned short>& vec, const unsigned short value)
+int16_t check_existence_and_bisect(const std::vector<uint16_t>& vec, const uint16_t value)
 {
-    short size = static_cast<short>(vec.size());
-    for (short res = 0; res < size; res++)
+    int16_t size = static_cast<int16_t>(vec.size());
+    for (int16_t res = 0; res < size; res++)
     {
         if (vec[res] > value) return res;
         else if (vec[res] == value) return -1;
@@ -147,7 +149,7 @@ std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolu
     return duration;
 }
 
-long long timer(std::chrono::time_point<std::chrono::high_resolution_clock> start)
+int64_t timer(std::chrono::time_point<std::chrono::high_resolution_clock> start)
 {
     std::chrono::time_point<std::chrono::high_resolution_clock> stop = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);

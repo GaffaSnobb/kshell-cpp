@@ -5,43 +5,63 @@
 #include <chrono>
 #include <bitset>
 #include <filesystem>
+#include <stdint.h>
+
 #include "parameters.hpp"
 #include "data_structures.hpp"
 #include "../external/eigen-3.4.0/Eigen/Dense"
 
-// void print_bit_representation(unsigned short state);
+using std::vector;
+using std::chrono::time_point;
+using std::chrono::high_resolution_clock;
+using std::chrono::milliseconds;
+using std::string;
+
+// void print_bit_representation(uint16_t state);
 void complete_hermitian_matrix(Eigen::MatrixXd& matrix);
-template <typename T>
-void print_bit_representation(const T& value);
-void print_vector(const std::vector<std::bitset<n_bits_bitset>>& vec);
+void print(vector<OrbitalParameters> orbitals);
+void print_vector(const vector<std::bitset<n_bits_bitset>>& vec);
+void print_vector(const vector<Key5>& vec);
 void print(const Key6& key);
-void print_vector(const std::vector<Key5>& vec);
-template <typename T>
-void print_vector(const std::vector<T>& vec);
-template <typename T>
-void print_vector(const std::vector<std::vector<T>>& nested_vector);
-template <typename T>
-void print_vector(std::string name, const std::vector<T>& vec);
-template <typename T>
-void print(std::string name, T value);
-void print(std::vector<OrbitalParameters> orbitals);
-template <typename T0, typename T1, typename T2, typename T3>
-std::vector<T0> range(T1 start, T2 stop, T3 step);
-template <typename T>
-double mean(std::vector<T> vec);
-short index(const std::vector<unsigned short>& vec, const unsigned short value);
-short check_existence_and_bisect(const std::vector<unsigned short>& vec, const unsigned short value);
-std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolution_clock> start, std::string name);
-std::chrono::time_point<std::chrono::high_resolution_clock> timer();
-long long timer(std::chrono::time_point<std::chrono::high_resolution_clock> start);
+int16_t index(const vector<uint16_t>& vec, const uint16_t value);
+int16_t check_existence_and_bisect(const vector<uint16_t>& vec, const uint16_t value);
+time_point<high_resolution_clock> timer();
+milliseconds timer(time_point<high_resolution_clock> start, string name);
+int64_t timer(time_point<high_resolution_clock> start);
+void check_if_file_exists(const std::filesystem::path& path);
+
+template <typename T1, typename T2>
+void print_flattened_2d_array(const T1* arr, const T2 size);
+
+template <typename T1, typename T2>
+void write_flattened_2d_array_to_file(const T1* arr, const T2 size, const string& filename);
+
 template <typename T1, typename T2>
 bool compare_arrays(T1* arr1, T1* arr2, T2 size);
-template <typename T1, typename T2>
-void print_flattened_2d_array(T1* arr, T2 size);
-template <typename T0, typename T1, typename T2>
-void print_loop_timer(std::vector<T0>& loop_timings, T1 idx, T2 n_iterations);
 
-void check_if_file_exists(const std::filesystem::path& path);
+template <typename T>
+void print_bit_representation(const T& value);
+
+template <typename T>
+void print_vector(const vector<T>& vec);
+
+template <typename T>
+void print_vector(const vector<vector<T>>& nested_vector);
+
+template <typename T>
+void print_vector(string name, const vector<T>& vec);
+
+template <typename T>
+void print(string name, T value);
+
+template <typename T0, typename T1, typename T2, typename T3>
+vector<T0> range(T1 start, T2 stop, T3 step);
+
+template <typename T>
+double mean(vector<T> vec);
+
+template <typename T0, typename T1, typename T2>
+void print_loop_timer(vector<T0>& loop_timings, T1 idx, T2 n_iterations);
 
 #include "tools.tpp"
 #endif // TOOLS_HPP
