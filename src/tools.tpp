@@ -9,6 +9,8 @@
 
 using std::cout;
 using std::endl;
+using std::vector;
+using std::string;
 
 template <typename T1, typename T2>
 void print_flattened_2d_array(const T1* arr, const T2 size)
@@ -25,7 +27,7 @@ void print_flattened_2d_array(const T1* arr, const T2 size)
 }
 
 template <typename T1, typename T2>
-void write_flattened_2d_array_to_file(const T1* arr, const T2 size, const std::string& filename)
+void write_flattened_2d_array_to_file(const T1* arr, const T2 size, const string& filename)
 {
     std::ofstream file(filename);
 
@@ -65,7 +67,7 @@ void print_bit_representation(const T& value)
 }
 
 template <typename T>
-void print_vector(const std::vector<T>& vec)
+void print_vector(const vector<T>& vec)
 {   
     bool first_value = true;
     cout << "[";
@@ -79,7 +81,7 @@ void print_vector(const std::vector<T>& vec)
 }
 
 template <typename T>
-void print_vector(const std::vector<std::vector<T>>& nested_vector)
+void print_vector(const vector<vector<T>>& nested_vector)
 {
     for (const auto& inner_vector : nested_vector)
     {
@@ -103,7 +105,7 @@ void print_vector(const std::vector<std::vector<T>>& nested_vector)
 }
 
 template <typename T>
-void print_vector(std::string name, const std::vector<T>& vec)
+void print_vector(string name, const vector<T>& vec)
 {   
     cout << name << " = ";
     for (const T& val : vec)
@@ -114,20 +116,20 @@ void print_vector(std::string name, const std::vector<T>& vec)
 }
 
 template <typename T>
-void print(std::string name, T value)
+void print(string name, T value)
 {
     cout << name << " = " << value << endl;
     return;
 }
 
 template <typename T0, typename T1, typename T2, typename T3>
-std::vector<T0> range(T1 start, T2 stop, T3 step)
+vector<T0> range(T1 start, T2 stop, T3 step)
 {
     static_assert(
         std::is_integral<T1>::value and std::is_integral<T2>::value and std::is_integral<T3>::value,
         "Start, stop, and step must be integral types."
     );
-    std::vector<T0> range;
+    vector<T0> range;
 
     if (step == 0)
     {
@@ -151,13 +153,13 @@ std::vector<T0> range(T1 start, T2 stop, T3 step)
 }
 
 template <typename T>
-double mean(std::vector<T> vec)
+double mean(vector<T> vec)
 {
     return std::accumulate(vec.begin(), vec.end(), 0.0)/vec.size();
 }
 
 template <typename T0, typename T1, typename T2>
-void print_loop_timer(std::vector<T0>& loop_timings, T1 idx, T2 n_iterations)
+void print_loop_timer(vector<T0>& loop_timings, T1 idx, T2 n_iterations)
 {
     double mean_time = mean(loop_timings)/1000;
     int32_t num_threads = omp_get_num_threads();

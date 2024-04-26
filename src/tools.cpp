@@ -13,6 +13,11 @@
 
 using std::cout;
 using std::endl;
+using std::vector;
+using std::chrono::time_point;
+using std::chrono::high_resolution_clock;
+using std::chrono::milliseconds;
+using std::string;
 
 // void complete_hermitian_matrix(Eigen::MatrixXcd& matrix) // For complex values.
 void complete_hermitian_matrix(Eigen::MatrixXd& matrix)
@@ -40,7 +45,7 @@ void complete_hermitian_matrix(Eigen::MatrixXd& matrix)
     timer(start, "complete_hermitian_matrix");
 }
 
-void print(std::vector<OrbitalParameters> orbitals)
+void print(vector<OrbitalParameters> orbitals)
 {
     for (const OrbitalParameters& orb : orbitals)
     {
@@ -53,7 +58,7 @@ void print(std::vector<OrbitalParameters> orbitals)
     }
 }
 
-void print_vector(const std::vector<std::bitset<n_bits_bitset>>& vec)
+void print_vector(const vector<std::bitset<n_bits_bitset>>& vec)
 {
     for (const std::bitset<n_bits_bitset> val : vec)
     {
@@ -72,7 +77,7 @@ void print_vector(const std::vector<std::bitset<n_bits_bitset>>& vec)
     }
 }
 
-void print_vector(const std::vector<Key5>& vec)
+void print_vector(const vector<Key5>& vec)
 {
     for (Key5 elem : vec)
     {
@@ -85,7 +90,7 @@ void print(const Key6& key)
     cout << "{" << key.j1 << ", " << key.m1 << ", " << key.j2 << ", " << key.m2 << ", " << key.J << ", " << key.M << "}," << endl;
 }
 
-int16_t index(const std::vector<uint16_t>& vec, const uint16_t value)
+int16_t index(const vector<uint16_t>& vec, const uint16_t value)
 {
     /*
     Returns the index of the first occurence of `value` in `vec`. If
@@ -97,7 +102,7 @@ int16_t index(const std::vector<uint16_t>& vec, const uint16_t value)
     
     Parameters
     ----------
-    vec : std::vector<uint16_t>
+    vec : vector<uint16_t>
         The vector to search in.
     
     value : uint16_t
@@ -125,7 +130,7 @@ int16_t index(const std::vector<uint16_t>& vec, const uint16_t value)
     return -1;
 }
 
-int16_t check_existence_and_bisect(const std::vector<uint16_t>& vec, const uint16_t value)
+int16_t check_existence_and_bisect(const vector<uint16_t>& vec, const uint16_t value)
 {
     int16_t size = static_cast<int16_t>(vec.size());
     for (int16_t res = 0; res < size; res++)
@@ -136,23 +141,23 @@ int16_t check_existence_and_bisect(const std::vector<uint16_t>& vec, const uint1
     return size;
 }
 
-std::chrono::time_point<std::chrono::high_resolution_clock> timer()
+time_point<high_resolution_clock> timer()
 {
-    return std::chrono::high_resolution_clock::now();
+    return high_resolution_clock::now();
 }
 
-std::chrono::milliseconds timer(std::chrono::time_point<std::chrono::high_resolution_clock> start, std::string name)
+milliseconds timer(time_point<high_resolution_clock> start, string name)
 {
-    std::chrono::time_point<std::chrono::high_resolution_clock> stop = std::chrono::high_resolution_clock::now();
-    std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    time_point<high_resolution_clock> stop = high_resolution_clock::now();
+    milliseconds duration = std::chrono::duration_cast<milliseconds>(stop - start);
     cout << name << ": " << duration.count()/1000.0 << " s" << endl;
     return duration;
 }
 
-int64_t timer(std::chrono::time_point<std::chrono::high_resolution_clock> start)
+int64_t timer(time_point<high_resolution_clock> start)
 {
-    std::chrono::time_point<std::chrono::high_resolution_clock> stop = std::chrono::high_resolution_clock::now();
-    std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    time_point<high_resolution_clock> stop = high_resolution_clock::now();
+    milliseconds duration = std::chrono::duration_cast<milliseconds>(stop - start);
     return duration.count();
 }
 
