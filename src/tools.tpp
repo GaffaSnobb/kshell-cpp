@@ -28,8 +28,22 @@ void print_flattened_2d_array(const T1* arr, const T2 size)
 
 template <typename T1, typename T2>
 void write_flattened_2d_array_to_file(T1* arr, const T2 size, const std::string& filename)
-{   
-    std::ofstream file(filename);
+{
+    /*
+    Write the flattened 2D array as a true 2D array. Write it with valid
+    C++ syntax, example:
+
+        constexpr double arr[3][3] = {
+            {1.64658, 0, 0},
+            {0, -3.9478, 0},
+            {0, 0, -3.16354}
+        };
+    */
+    std::string path = "tests/data/";
+    path.append(filename);
+    path.append(".hpp");
+
+    std::ofstream file(path);
 
     if (!file.is_open())
     {
@@ -48,17 +62,34 @@ void write_flattened_2d_array_to_file(T1* arr, const T2 size, const std::string&
         }
     }
 
-    size_t max_width = 15;
+    // size_t max_width = 15;
+    file << "constexpr double arr[" << size << "][" << size << "] = {\n";
 
     for (size_t row_idx = 0; row_idx < size; row_idx++)
     {
+        file << "    {";
         for (size_t col_idx = 0; col_idx < size; col_idx++)
         {
-            file << std::left << std::setw(max_width) << arr[row_idx*size + col_idx];
+            // file << std::left << std::setw(max_width) << arr[row_idx*size + col_idx];
+            if (col_idx != (size - 1))
+            {
+                file << arr[row_idx*size + col_idx] << ", ";
+            }
+            else
+            {
+                file << arr[row_idx*size + col_idx];
+            }
         }
-        file << '\n';
+        if (row_idx != (size - 1))
+        {
+            file << "}," << '\n';
+        }
+        else
+        {
+            file << "}" << '\n';
+        }
     }
-    file << '\n';
+    file << "};";
 
     file.close();
 }
