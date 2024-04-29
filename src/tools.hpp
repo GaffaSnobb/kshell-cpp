@@ -18,6 +18,7 @@ using std::chrono::milliseconds;
 using std::string;
 
 // void print_bit_representation(uint16_t state);
+bool compare_with_ref_matrix(double* arr, string ref_name, size_t size);
 void complete_symmetric_matrix(Eigen::MatrixXd& matrix);
 vector<double> read_symmetric_matrix(const string& filename);
 void print(vector<OrbitalParameters> orbitals);

@@ -9,6 +9,7 @@
 #include "parameters.hpp"
 #include "tools.hpp"
 #include "data_structures.hpp"
+#include "../tests/data/ref_matrices.hpp"
 #include "../external/eigen-3.4.0/Eigen/Dense"
 
 using std::cout;
@@ -19,6 +20,125 @@ using std::chrono::time_point;
 using std::chrono::high_resolution_clock;
 using std::chrono::milliseconds;
 using std::string;
+
+bool compare_with_ref_matrix(double* arr, string ref_name, size_t size)
+{
+    /*
+    Yeah this is ugly, but whatever.
+    */
+    const double tol = 1e-15;
+
+    if (ref_name == "p0n1")
+    {
+        for (size_t row_idx = 0; row_idx < size; row_idx++)
+        {
+            for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+            {
+                size_t flat_idx = row_idx*size + col_idx;
+                if (std::abs(arr[flat_idx] - ref_matrices::p0n1[row_idx][col_idx]) > tol)
+                {   
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    else if (ref_name == "p1n0")
+    {
+        for (size_t row_idx = 0; row_idx < size; row_idx++)
+        {
+            for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+            {
+                size_t flat_idx = row_idx*size + col_idx;
+                if (std::abs(arr[flat_idx] - ref_matrices::p1n0[row_idx][col_idx]) > tol)
+                {   
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    else if (ref_name == "p1n1")
+    {
+        for (size_t row_idx = 0; row_idx < size; row_idx++)
+        {
+            for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+            {
+                size_t flat_idx = row_idx*size + col_idx;
+                if (std::abs(arr[flat_idx] - ref_matrices::p1n1[row_idx][col_idx]) > tol)
+                {   
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    else if (ref_name == "p2n0")
+    {
+        for (size_t row_idx = 0; row_idx < size; row_idx++)
+        {
+            for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+            {
+                size_t flat_idx = row_idx*size + col_idx;
+                if (std::abs(arr[flat_idx] - ref_matrices::p2n0[row_idx][col_idx]) > tol)
+                {   
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    else if (ref_name == "p0n2")
+    {
+        for (size_t row_idx = 0; row_idx < size; row_idx++)
+        {
+            for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+            {
+                size_t flat_idx = row_idx*size + col_idx;
+                if (std::abs(arr[flat_idx] - ref_matrices::p0n2[row_idx][col_idx]) > tol)
+                {   
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    else if (ref_name == "p1n2")
+    {
+        for (size_t row_idx = 0; row_idx < size; row_idx++)
+        {
+            for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+            {
+                size_t flat_idx = row_idx*size + col_idx;
+                if (std::abs(arr[flat_idx] - ref_matrices::p1n2[row_idx][col_idx]) > tol)
+                {   
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    else if (ref_name == "p2n1")
+    {
+        for (size_t row_idx = 0; row_idx < size; row_idx++)
+        {
+            for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+            {
+                size_t flat_idx = row_idx*size + col_idx;
+                if (std::abs(arr[flat_idx] - ref_matrices::p2n1[row_idx][col_idx]) > tol)
+                {   
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    else
+    {
+        cout << "[WARNING] Ref. matrix for " << ref_name << " does not exist." << endl;
+    }
+    return false;
+}
 
 // void complete_hermitian_matrix(Eigen::MatrixXcd& matrix) // For complex values.
 void complete_symmetric_matrix(Eigen::MatrixXd& matrix)
