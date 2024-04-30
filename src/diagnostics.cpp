@@ -1,28 +1,34 @@
 #include <iostream>
+#include <hip/hip_runtime.h>
 #include "data_structures.hpp"
 #include "tools.hpp"
+#include "parameters.hpp"
 
 using std::cout;
 using std::endl;
+using std::string;
+
+const string DIAG_STR_START = "\n[DIAGNOSTICS]--------";
+const string DIAG_STR_END   = "[DIAGNOSTICS END]----\n";
 
 namespace diagnostics
 {
 void print_hamiltonian_info(const Interaction& interaction)
 {
     const unsigned int m_dim = interaction.basis_states.size();
-    cout << "\n[DIAGNOSTICS]--------" << endl;
+    cout << DIAG_STR_START << endl;
     print("n_valence_protons", interaction.model_space_protons.n_valence_nucleons);
     print("n_valence_neutrons", interaction.model_space_neutrons.n_valence_nucleons);
     print("m_dim", m_dim);
     print("m_dim**2", m_dim*m_dim);
     print("H size (MB): ", m_dim*m_dim*sizeof(double)/1000./1000.);
     print("H diag size (MB): ", m_dim*sizeof(double)/1000./1000.);
-    cout << "[DIAGNOSTICS END]----\n" << endl;
+    cout << DIAG_STR_END << endl;
 }
 
 void print_dtype_sizes()
 {
-    cout << "\n[DIAGNOSTICS]--------" << endl;
+    cout << DIAG_STR_START << endl;
     cout << "bool              : " << sizeof(bool)               << "B (" << sizeof(bool)*8               << "b)" << endl;
     cout << "char              : " << sizeof(char)               << "B (" << sizeof(char)*8               << "b)" << endl;
     cout << "unsigned short    : " << sizeof(unsigned short)     << "B (" << sizeof(unsigned short)*8     << "b)" << " [0, " << (2ULL << (8*sizeof(unsigned short) - 1)) - 1       << "]"  << endl;
@@ -36,6 +42,17 @@ void print_dtype_sizes()
     cout << "float             : " << sizeof(float)              << "B (" << sizeof(float)*8              << "b)" << endl;
     cout << "double            : " << sizeof(double)             << "B (" << sizeof(double)*8             << "b)" << endl;
     cout << "long double       : " << sizeof(long double)        << "B (" << sizeof(long double)*8        << "b)" << endl;
-    cout << "[DIAGNOSTICS END]----\n" << endl;
+    cout << DIAG_STR_END << endl;
+}
+
+void print_gpu_mem_usage(const Interaction& interaction, const Indices& indices)
+{
+    hipDeviceProp_t prop;
+    size_t device_id = 0;
+    hipGetDeviceProperties(&prop, device_id);
+
+    cout << "prop.totalConstMem: " << prop.totalConstMem/1e6 << " MB" << endl;
+    cout << "prop.integrated: " << prop.integrated << endl;
+    cout << "prop.gcnArchName: " << prop.gcnArchName << endl;
 }
 }
