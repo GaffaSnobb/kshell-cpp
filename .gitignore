@@ -106,3 +106,5 @@ Temporary Items
 external/*
 *.txt
 *playground*
+tests/data/*
+resources/interaction_files/*
