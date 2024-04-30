@@ -11,19 +11,21 @@
 
 using std::cout;
 using std::endl;
+using std::string;
+using std::vector;
 
 namespace loaders
 {
 void make_tbme_map(
     std::unordered_map<Key5, double>& tbme_map,
-    std::vector<Key5>& tbme_keys,
-    std::vector<uint16_t>& orb_0,
-    std::vector<uint16_t>& orb_1,
-    std::vector<uint16_t>& orb_2,
-    std::vector<uint16_t>& orb_3,
-    std::vector<uint16_t>& j_couple,
-    std::vector<double>& tbme_list,
-    std::vector<OrbitalParameters> model_space_orbitals,
+    vector<Key5>& tbme_keys,
+    vector<uint16_t>& orb_0,
+    vector<uint16_t>& orb_1,
+    vector<uint16_t>& orb_2,
+    vector<uint16_t>& orb_3,
+    vector<uint16_t>& j_couple,
+    vector<double>& tbme_list,
+    vector<OrbitalParameters> model_space_orbitals,
     double tbme_mass_dependence_factor
 )
 {
@@ -123,15 +125,15 @@ Interaction load_interaction(
     Calculate the m basis states.
     */
     auto start = timer();
-    std::vector<uint16_t> orb_0, orb_1, orb_2, orb_3, j_couple;
-    std::vector<int16_t> all_jz_values_protons;
-    std::vector<int16_t> all_jz_values_neutrons;
-    std::vector<int16_t> all_jz_values;
-    std::vector<double> tbme, spe;
+    vector<uint16_t> orb_0, orb_1, orb_2, orb_3, j_couple;
+    vector<int16_t> all_jz_values_protons;
+    vector<int16_t> all_jz_values_neutrons;
+    vector<int16_t> all_jz_values;
+    vector<double> tbme, spe;
 
-    std::vector<OrbitalParameters> model_space_protons_orbitals;
-    std::vector<OrbitalParameters> model_space_neutrons_orbitals;
-    std::vector<OrbitalParameters> model_space_orbitals;
+    vector<OrbitalParameters> model_space_protons_orbitals;
+    vector<OrbitalParameters> model_space_neutrons_orbitals;
+    vector<OrbitalParameters> model_space_orbitals;
 
     check_if_file_exists(interaction_filename);
     std::ifstream infile(interaction_filename);
@@ -141,16 +143,20 @@ Interaction load_interaction(
     uint16_t n_proton_orbitals = 0;
     uint16_t n_neutron_orbitals = 0;
     uint16_t n_spe = 0;
-    uint16_t n_core_neutrons;
-    uint16_t n_core_protons;
+    uint16_t n_core_neutrons = 0;
+    uint16_t n_core_protons = 0;
     double tbme_mass_dependence_exponent;
     double tbme_mass_dependence_denominator;
     int32_t _;  // Garbage.
 
+    // const size_t max_iterations = 1000;
+    // size_t iteration_counter = 0;
+
     while (std::getline(infile, line))
     {
         std::string target_string = "! model space";
-        if (!line.empty() && (line == target_string))
+        // if (!line.empty() && (line == target_string))
+        if (!line.empty() && (line.find(target_string) != std::string::npos))
         {
             /*
             Read model space info. Example from w.snt:
@@ -170,6 +176,36 @@ Interaction load_interaction(
             iss >> n_proton_orbitals >> n_neutron_orbitals >> n_core_protons >> n_core_neutrons;
             break;
         }
+
+        // iteration_counter++;
+        // if (iteration_counter > max_iterations)
+        // {
+        //     string msg =  "Max number of iterations has been reached when processing '" + interaction_filename;
+        //     throw std::runtime_error(msg);
+        // }
+    }
+    
+    if ((n_proton_orbitals == 0) or (n_neutron_orbitals == 0))
+    {   
+        string msg = 
+            "Error when reading model space orbital number from interaction file: '"
+            + interaction_filename
+            + "'. Expected non-zero values, got n_proton_orbitals: "
+            + std::to_string(n_proton_orbitals)
+            + ", n_neutron_orbitals: " + std::to_string(n_neutron_orbitals);
+        
+        throw std::runtime_error(msg);
+    }
+    if ((n_core_protons == 0) or (n_core_neutrons == 0))
+    {   
+        string msg = 
+            "Error when reading core nucleon number from interaction file: '"
+            + interaction_filename
+            + "'. Expected non-zero values, got n_core_protons: "
+            + std::to_string(n_core_protons)
+            + ", n_core_neutrons: " + std::to_string(n_core_neutrons);
+        
+        throw std::runtime_error(msg);
     }
 
     for (size_t i = 0; i < n_proton_orbitals; i++)
@@ -191,7 +227,7 @@ Interaction load_interaction(
         int16_t tz_tmp;
         iss >> _ >> n_tmp >> l_tmp >> j_tmp >> tz_tmp;
         degeneracy_tmp = j_tmp + 1;
-        std::vector<int16_t> jz_tmp = range<int16_t>(-j_tmp, j_tmp + 1, 2);
+        vector<int16_t> jz_tmp = range<int16_t>(-j_tmp, j_tmp + 1, 2);
         all_jz_values.insert(all_jz_values.end(), jz_tmp.begin(), jz_tmp.end());
         all_jz_values_protons.insert(all_jz_values_protons.end(), jz_tmp.begin(), jz_tmp.end());
         model_space_protons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
@@ -217,7 +253,7 @@ Interaction load_interaction(
         int16_t tz_tmp;
         iss >> _ >> n_tmp >> l_tmp >> j_tmp >> tz_tmp;
         degeneracy_tmp = j_tmp + 1;
-        std::vector<int16_t> jz_tmp = range<int16_t>(-j_tmp, j_tmp + 1, 2);
+        vector<int16_t> jz_tmp = range<int16_t>(-j_tmp, j_tmp + 1, 2);
         all_jz_values.insert(all_jz_values.end(), jz_tmp.begin(), jz_tmp.end());
         all_jz_values_neutrons.insert(all_jz_values_neutrons.end(), jz_tmp.begin(), jz_tmp.end());
         model_space_neutrons_orbitals.emplace_back(n_tmp, l_tmp, j_tmp, degeneracy_tmp, tz_tmp, jz_tmp);
@@ -227,7 +263,7 @@ Interaction load_interaction(
     while (std::getline(infile, line))
     {
         std::string target_string = "! interaction";
-        if (!line.empty() && (line == target_string))
+        if (!line.empty() && (line.find(target_string) != std::string::npos))
         {
             /*
             Read the number of single-particle energies. Example from w.snt:
@@ -247,6 +283,17 @@ Interaction load_interaction(
             iss >> n_spe >> _;
             break;
         }
+    }
+
+    if (n_spe == 0)
+    {   
+        string msg = 
+            "Error when reading from interaction file: '"
+            + interaction_filename
+            + "'. Expected non-zero values, got n_spe: "
+            + std::to_string(n_spe);
+        
+        throw std::runtime_error(msg);
     }
 
     double* spe_array = new double[n_spe];
@@ -339,7 +386,7 @@ Interaction load_interaction(
 
     timer(start, "load_interaction");
     std::unordered_map<Key5, double> tbme_map;
-    std::vector<Key5> tbme_keys;
+    vector<Key5> tbme_keys;
     make_tbme_map(
         tbme_map,
         tbme_keys,
