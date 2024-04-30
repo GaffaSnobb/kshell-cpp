@@ -9,6 +9,7 @@ SRCS = $(addprefix $(PATHS), tools.cpp loaders.cpp hamiltonian.cpp basis.cpp bas
 OBJS = $(addprefix $(PATHO), $(notdir $(SRCS:.cpp=.o)))
 DEPS = $(addprefix $(PATHD), $(notdir $(SRCS:.cpp=.d)))
 CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -Ofast# -Wno-unused-result
+# CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -O0 -g	# Debug flags.
 
 TEST_SRC = ../tests/hash_tests.cpp
 TEST_OBJ = $(TEST_SRC:.cpp=.o)
