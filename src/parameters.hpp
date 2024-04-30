@@ -3,6 +3,8 @@
 
 #include "data_structures.hpp"
 
+constexpr size_t CONST_MEM_ARR_LEN = 5688;  // Length of the arrays in the GPU constant memory.
+
 constexpr unsigned short n_bits_bitset = 24;    // Has to be equal to or larger than the number of m-substates in the model space.
 
 constexpr double inverse_sqrt_2[2] = {1, 0.70710678118654757};   // { 1/sqrt(1), 1/sqrt(2) }. Used in the two-body H matrix element calculations.
