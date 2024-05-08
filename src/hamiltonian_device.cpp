@@ -9,14 +9,75 @@
 #include "generate_indices.hpp"
 #include "basis.hpp"
 #include "tools.hpp"
+#include "parameters.hpp"
+#include "macros.hpp"
+#include "diagnostics.hpp"
 
 using std::cout;
 using std::endl;
 
+/*
+I cannot for the life of me figure out how to put these device constant
+memory arrays in a header so that I can use them in several translation
+units. `extern` just makes the entire compilation crash, and if I
+declare the arrays in a header, values I put into them do not persist
+across translation units.
+*/
+__constant__ uint16_t orbital_idx_to_composite_m_idx_map_flattened_indices_const[CONST_MEM_ARR_LEN_N_ORBITALS];
+__constant__ uint16_t creation_orb_indices_0_const[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t creation_orb_indices_1_const[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t annihilation_orb_indices_0_const[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t annihilation_orb_indices_1_const[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t j_coupled_const[CONST_MEM_ARR_LEN_INDICES];
+__constant__ int16_t m_coupled_const[CONST_MEM_ARR_LEN_INDICES];
+__constant__ double tbme_const[CONST_MEM_ARR_LEN_INDICES];
+
+void gpu_init(const Interaction& interaction, const Indices& indices)
+{
+    /*
+    Add shit to constant memory.
+    */
+    hipDeviceProp_t prop;
+    const size_t device_id = 0;
+    HIP_ASSERT(hipGetDeviceProperties(&prop, device_id));
+
+    const size_t coi_0 = indices.creation_orb_indices_0.size()*sizeof(uint16_t);
+    const size_t coi_1 = indices.creation_orb_indices_1.size()*sizeof(uint16_t);
+    const size_t aoi_0 = indices.annihilation_orb_indices_0.size()*sizeof(uint16_t);
+    const size_t aoi_1 = indices.annihilation_orb_indices_1.size()*sizeof(uint16_t);
+    const size_t jc = indices.j_coupled.size()*sizeof(uint16_t);
+    const size_t mc = indices.m_coupled.size()*sizeof(int16_t);
+    const size_t tbme = indices.tbme.size()*sizeof(double);
+    const size_t oitcmimf = interaction.model_space.orbitals.size()*sizeof(uint16_t);
+    const size_t total = coi_0 + coi_1 + aoi_0 + aoi_1 + jc + mc + tbme + oitcmimf;
+    
+    hip_wrappers::hipMemcpyToSymbol(creation_orb_indices_0_const, indices.creation_orb_indices_0);
+    hip_wrappers::hipMemcpyToSymbol(creation_orb_indices_1_const, indices.creation_orb_indices_1);
+    hip_wrappers::hipMemcpyToSymbol(annihilation_orb_indices_0_const, indices.annihilation_orb_indices_0);
+    hip_wrappers::hipMemcpyToSymbol(annihilation_orb_indices_1_const, indices.annihilation_orb_indices_1);
+    hip_wrappers::hipMemcpyToSymbol(j_coupled_const, indices.j_coupled);
+    hip_wrappers::hipMemcpyToSymbol(m_coupled_const, indices.m_coupled);
+    hip_wrappers::hipMemcpyToSymbol(orbital_idx_to_composite_m_idx_map_flattened_indices_const, indices.orbital_idx_to_composite_m_idx_map_flattened_indices, oitcmimf);
+    
+    cout << diagnostics::DIAG_STR_START << endl;
+    cout << coi_0/1e3 << " kB" << " (" << indices.creation_orb_indices_0.size() << " elements)" << endl;
+    cout << coi_1/1e3 << " kB" << " (" << indices.creation_orb_indices_1.size() << " elements)" << endl;
+    cout << aoi_0/1e3 << " kB" << " (" << indices.annihilation_orb_indices_0.size() << " elements)" << endl;
+    cout << aoi_1/1e3 << " kB" << " (" << indices.annihilation_orb_indices_1.size() << " elements)" << endl;
+    cout << jc/1e3 << " kB" << " (" << indices.j_coupled.size() << " elements)" << endl;
+    cout << mc/1e3 << " kB" << " (" << indices.m_coupled.size() << " elements)" << endl;
+    cout << tbme/1e3 << " kB" << " (" << indices.tbme.size() << " elements)" << endl;
+    cout << oitcmimf/1e3 << " kB" << " (" << interaction.model_space.orbitals.size() << " elements)" << endl;
+    cout << total/1e6 << " MB __constant__ mem used of " << prop.totalConstMem/1e6 << " MB total (" << total*100.0/prop.totalConstMem << "%)" << endl;
+    cout << diagnostics::DIAG_STR_END << endl;
+
+    diagnostics::print_gpu_diagnostics(interaction, indices);
+}
+
 namespace hamiltonian_device
 {
 __device__ double calculate_onebody_matrix_element(
-    const uint16_t n_orbitals,
+    const size_t n_orbitals,
     const double* spe,
     const uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices,
     const uint64_t& left_state,
@@ -29,8 +90,10 @@ __device__ double calculate_onebody_matrix_element(
     
     for (uint16_t creation_and_annihilation_orb_idx = 0; creation_and_annihilation_orb_idx < n_orbitals; creation_and_annihilation_orb_idx++)
     {
+        // const uint16_t creation_end_m_idx =
+        //     orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
         const uint16_t creation_end_m_idx =
-            orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
+            orbital_idx_to_composite_m_idx_map_flattened_indices_const[creation_and_annihilation_orb_idx];
         const uint16_t annihilation_end_m_idx =
             orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
 
@@ -68,7 +131,7 @@ __global__ void onebody_matrix_element_dispatcher(
     const double* spe,
     const uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices,
     const uint32_t m_dim,
-    const uint16_t n_orbitals
+    const size_t n_orbitals
 )
 {
     const int32_t idx = blockIdx.x*blockDim.x + threadIdx.x;
@@ -216,13 +279,12 @@ __device__ double calculate_twobody_matrix_element(
 __global__ void twobody_matrix_element_dispatcher(
     double* H_diag,
     const uint64_t* basis_states,
-    const double* spe,
     const uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices,
     const uint32_t m_dim,
-    const uint16_t n_orbitals
+    const size_t n_orbitals
 )
 {
-    int32_t idx = blockIdx.x*blockDim.x + threadIdx.x;
+    const size_t idx = blockIdx.x*blockDim.x + threadIdx.x;
     // int32_t row_idx = idx/m_dim;
     // int32_t col_idx = idx%m_dim;
 
@@ -232,36 +294,37 @@ __global__ void twobody_matrix_element_dispatcher(
         const uint64_t left_state = basis_states[idx];
         const uint64_t right_state = basis_states[idx];
         
-        H_diag[idx] = calculate_onebody_matrix_element(
-            n_orbitals,
-            spe,
-            orbital_idx_to_composite_m_idx_map_flattened_indices,
-            left_state,
-            right_state
-        );
+        // H_diag[idx] = calculate_twobody_matrix_element( // HEREE!!!
+        //     n_orbitals,
+        //     spe,
+        //     orbital_idx_to_composite_m_idx_map_flattened_indices,
+        //     left_state,
+        //     right_state
+        // );
     }
 }
 
 void create_hamiltonian_device_dispatcher(const Interaction& interaction, const Indices& indices, double* H)
 {
-    const uint32_t m_dim = interaction.basis_states.size();
-    const uint16_t n_orbitals = interaction.model_space.n_orbitals;
-
-    const int32_t threads_per_block = 128;
-    const int32_t blocks_per_grid = (m_dim + threads_per_block - 1) / threads_per_block;
+    gpu_init(interaction, indices);
+    const size_t m_dim = interaction.basis_states.size();
+    const size_t n_orbitals = interaction.model_space.n_orbitals;
+    const size_t threads_per_block = 128;
+    const size_t blocks_per_grid = (m_dim + threads_per_block - 1)/threads_per_block;
     double* H_diag_device = nullptr;
-    uint64_t* basis_states_device = nullptr;
     double* spe_array_device = nullptr;
     uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices_device = nullptr;
     double* H_diag_tmp = new double[m_dim];
     
+    uint64_t* basis_states_device = nullptr;
+    hip_wrappers::hipMalloc(&basis_states_device, m_dim*sizeof(uint64_t));
+    hip_wrappers::hipMemcpy(basis_states_device, interaction.basis_states.data(), m_dim*sizeof(uint64_t), hipMemcpyHostToDevice);
+    
     auto start = timer();
         hip_wrappers::hipMalloc(&H_diag_device, m_dim*sizeof(double));
-        hip_wrappers::hipMalloc(&basis_states_device, m_dim*sizeof(uint64_t));
         hip_wrappers::hipMalloc(&spe_array_device, n_orbitals*sizeof(double));
         hip_wrappers::hipMalloc(&orbital_idx_to_composite_m_idx_map_flattened_indices_device, n_orbitals*sizeof(uint16_t));
         
-        hip_wrappers::hipMemcpy(basis_states_device, interaction.basis_states.data(), m_dim*sizeof(uint64_t), hipMemcpyHostToDevice);
         hip_wrappers::hipMemcpy(spe_array_device, interaction.spe_array, n_orbitals*sizeof(double), hipMemcpyHostToDevice);
         hip_wrappers::hipMemcpy(orbital_idx_to_composite_m_idx_map_flattened_indices_device, indices.orbital_idx_to_composite_m_idx_map_flattened_indices, n_orbitals*sizeof(uint16_t), hipMemcpyHostToDevice);
 
@@ -278,11 +341,11 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
 
         hip_wrappers::hipMemcpy(H_diag_tmp, H_diag_device, m_dim*sizeof(double), hipMemcpyDeviceToHost);
         hip_wrappers::hipFree(H_diag_device);
-        hip_wrappers::hipFree(basis_states_device);
         hip_wrappers::hipFree(spe_array_device);
         hip_wrappers::hipFree(orbital_idx_to_composite_m_idx_map_flattened_indices_device);
     timer(start, "[DEVICE] one-body calc, alloc, copy, and free time");
 
+    hip_wrappers::hipFree(basis_states_device);
     for (size_t diag_idx = 0; diag_idx < m_dim; diag_idx++) H[diag_idx*m_dim + diag_idx] = H_diag_tmp[diag_idx]; // Copy data to the diagonal of H.
     delete[] H_diag_tmp;
 }
