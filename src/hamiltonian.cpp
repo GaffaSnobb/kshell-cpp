@@ -136,7 +136,6 @@ double calculate_onebody_matrix_element_primitive_bit_representation(
 }
 
 double calculate_twobody_matrix_element_primitive_bit_representation(
-    const Interaction& interaction,
     const Indices& indices,
     const uint64_t& left_state,
     const uint64_t& right_state
@@ -207,7 +206,6 @@ double calculate_twobody_matrix_element_primitive_bit_representation(
                     */
                     continue;
                 }
-
                 uint64_t new_right_state_annihilation = right_state;
                 const uint16_t n_operator_swaps_annihilation_0 = bittools::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_0);
                 int16_t annihilation_sign = bittools::negative_one_pow(n_operator_swaps_annihilation_0);
@@ -498,7 +496,6 @@ void create_hamiltonian_primitive_bit_representation_reference(const Interaction
     //     for (size_t col_idx = row_idx; col_idx < m_dim; col_idx++)
     //     {    
     //         H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation(
-    //             interaction,
     //             indices,
     //             interaction.basis_states[row_idx],
     //             interaction.basis_states[col_idx]
@@ -512,6 +509,6 @@ void create_hamiltonian_primitive_bit_representation_reference(const Interaction
     // }
     // cout << endl;   // For the progress bar.
     // timer(start, "[HOST][REFERENCE] two-body calc time");
-    // complete_hermitian_matrix(H);
+    // // complete_hermitian_matrix(H);
 }
 }
