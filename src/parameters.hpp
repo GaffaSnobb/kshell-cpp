@@ -3,7 +3,8 @@
 
 #include "data_structures.hpp"
 
-constexpr size_t CONST_MEM_ARR_LEN = 5688;  // Length of the arrays in the GPU constant memory.
+constexpr size_t CONST_MEM_ARR_LEN_INDICES = 5688;      // Length of the arrays in the GPU constant memory.
+constexpr size_t CONST_MEM_ARR_LEN_N_ORBITALS = 12*2;   // Length of the arrays in the GPU constant memory. Also the number of orbitals in the model space which for sdpf-sdg interactions is 12 proton orbitals and 12 neutron orbitals.
 
 constexpr unsigned short n_bits_bitset = 24;    // Has to be equal to or larger than the number of m-substates in the model space.
 
