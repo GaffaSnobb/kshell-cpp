@@ -13,20 +13,20 @@ const Indices generate_indices(const Interaction& interaction)
     calculations are used to reduce the computational load.
     */
     auto start = timer();
-    std::vector<unsigned short> orbital_idx_to_j_map;
-    std::vector<std::vector<unsigned short>> orbital_idx_to_composite_m_idx_map;
-    unsigned short* orbital_idx_to_composite_m_idx_map_flattened_indices = new unsigned short[interaction.model_space.orbitals.size()]; // End index of each map section.
-    unsigned short previous_degeneracy = 0;
-    unsigned short previous_size = 0;
+    std::vector<uint16_t> orbital_idx_to_j_map;
+    std::vector<std::vector<uint16_t>> orbital_idx_to_composite_m_idx_map;
+    uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices = new uint16_t[interaction.model_space.orbitals.size()]; // End index of each map section.
+    uint16_t previous_degeneracy = 0;
+    uint16_t previous_size = 0;
     
-    for (int i = 0; i < interaction.model_space.orbitals.size(); i++)
+    for (int32_t i = 0; i < interaction.model_space.orbitals.size(); i++)
     {   
-        unsigned short j = interaction.model_space.orbitals[i].j;
-        unsigned short current_degeneracy = interaction.model_space.orbitals[i].degeneracy;
+        uint16_t j = interaction.model_space.orbitals[i].j;
+        uint16_t current_degeneracy = interaction.model_space.orbitals[i].degeneracy;
 
         orbital_idx_to_j_map.push_back(j);
         orbital_idx_to_composite_m_idx_map.push_back(
-            range<unsigned short>(
+            range<uint16_t>(
                 previous_degeneracy,
                 previous_degeneracy + current_degeneracy,
                 1
@@ -42,37 +42,37 @@ const Indices generate_indices(const Interaction& interaction)
         flattened array is used for passing the index mapping to a
         kernel.
         */
-        unsigned short current_size = orbital_idx_to_composite_m_idx_map[i].size();
+        uint16_t current_size = orbital_idx_to_composite_m_idx_map[i].size();
         orbital_idx_to_composite_m_idx_map_flattened_indices[i] = current_size + previous_size;
 
         previous_size = previous_size + current_size;
     }
 
-    std::vector<unsigned short> creation_orb_indices_0;
-    std::vector<unsigned short> creation_orb_indices_1;
-    std::vector<unsigned short> annihilation_orb_indices_0;
-    std::vector<unsigned short> annihilation_orb_indices_1;
-    std::vector<unsigned short> j_coupled_list;
-    std::vector<short> m_coupled_list;
+    std::vector<uint16_t> creation_orb_indices_0;
+    std::vector<uint16_t> creation_orb_indices_1;
+    std::vector<uint16_t> annihilation_orb_indices_0;
+    std::vector<uint16_t> annihilation_orb_indices_1;
+    std::vector<uint16_t> j_coupled_list;
+    std::vector<int16_t> m_coupled_list;
     std::vector<double> tbme_list;
 
-    for (unsigned short creation_orb_idx_0 = 0; creation_orb_idx_0 < interaction.model_space.orbitals.size(); creation_orb_idx_0++)
+    for (uint16_t creation_orb_idx_0 = 0; creation_orb_idx_0 < interaction.model_space.orbitals.size(); creation_orb_idx_0++)
     {
-        for (unsigned short creation_orb_idx_1 = creation_orb_idx_0; creation_orb_idx_1 < interaction.model_space.orbitals.size(); creation_orb_idx_1++)
+        for (uint16_t creation_orb_idx_1 = creation_orb_idx_0; creation_orb_idx_1 < interaction.model_space.orbitals.size(); creation_orb_idx_1++)
         {
-            for (unsigned short annihilation_orb_idx_0 = 0; annihilation_orb_idx_0 < interaction.model_space.orbitals.size(); annihilation_orb_idx_0++)
+            for (uint16_t annihilation_orb_idx_0 = 0; annihilation_orb_idx_0 < interaction.model_space.orbitals.size(); annihilation_orb_idx_0++)
             {
-                for (unsigned short annihilation_orb_idx_1 = annihilation_orb_idx_0; annihilation_orb_idx_1 < interaction.model_space.orbitals.size(); annihilation_orb_idx_1++)
+                for (uint16_t annihilation_orb_idx_1 = annihilation_orb_idx_0; annihilation_orb_idx_1 < interaction.model_space.orbitals.size(); annihilation_orb_idx_1++)
                 {
-                    unsigned short j_min = std::max(
+                    uint16_t j_min = std::max(
                         std::abs(orbital_idx_to_j_map[creation_orb_idx_0] - orbital_idx_to_j_map[creation_orb_idx_1]),
                         std::abs(orbital_idx_to_j_map[annihilation_orb_idx_0] - orbital_idx_to_j_map[annihilation_orb_idx_1])
                     );
-                    unsigned short j_max = std::min(
+                    uint16_t j_max = std::min(
                         orbital_idx_to_j_map[creation_orb_idx_0] + orbital_idx_to_j_map[creation_orb_idx_1],
                         orbital_idx_to_j_map[annihilation_orb_idx_0] + orbital_idx_to_j_map[annihilation_orb_idx_1]
                     );
-                    for (unsigned short j_coupled = j_min; j_coupled <= j_max; j_coupled += 2)
+                    for (uint16_t j_coupled = j_min; j_coupled <= j_max; j_coupled += 2)
                     {
                         /*
                         j_coupled is the total angular momentum to which 
@@ -113,7 +113,7 @@ const Indices generate_indices(const Interaction& interaction)
                             */
                             continue;
                         }
-                        for (short m_coupled = -j_coupled; m_coupled <= j_coupled; m_coupled += 2)
+                        for (int16_t m_coupled = -j_coupled; m_coupled <= j_coupled; m_coupled += 2)
                         {
                             /*
                             m_coupled is simply the z component of the
