@@ -18,8 +18,13 @@ void hipMalloc(T** devPtr, size_t size)
 template <typename T1>
 void hipMemcpyToSymbol(T1& dev_const_mem_ptr, vector<uint16_t> src)
 {
+    const size_t offset = 0;
     hipError_t result = ::hipMemcpyToSymbol(
-        HIP_SYMBOL(dev_const_mem_ptr), src.data(), sizeof(uint16_t)*src.size()
+        HIP_SYMBOL(dev_const_mem_ptr),
+        src.data(),
+        sizeof(uint16_t)*src.size(),
+        offset,
+        hipMemcpyHostToDevice
     );
     if (result != hipSuccess)
     {
@@ -36,8 +41,13 @@ void hipMemcpyToSymbol(T1& dev_const_mem_ptr, vector<int16_t> src)
     use T1 in vector<T1> because `dev_const_mem_ptr` is a constant size
     T1 array of type T1 [<size>], not T1*.
     */
+    const size_t offset = 0;
     hipError_t result = ::hipMemcpyToSymbol(
-        HIP_SYMBOL(dev_const_mem_ptr), src.data(), sizeof(int16_t)*src.size()
+        HIP_SYMBOL(dev_const_mem_ptr),
+        src.data(),
+        sizeof(int16_t)*src.size(),
+        offset,
+        hipMemcpyHostToDevice
     );
     if (result != hipSuccess)
     {
