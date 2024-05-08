@@ -4,6 +4,8 @@
 #include "tools.hpp"
 #include "parameters.hpp"
 
+#define HIP_ASSERT(status) assert(status == hipSuccess)
+
 using std::cout;
 using std::endl;
 using std::string;
@@ -49,10 +51,25 @@ void print_gpu_mem_usage(const Interaction& interaction, const Indices& indices)
 {
     hipDeviceProp_t prop;
     size_t device_id = 0;
-    hipGetDeviceProperties(&prop, device_id);
-
+    HIP_ASSERT(hipGetDeviceProperties(&prop, device_id));
+    
     cout << "prop.totalConstMem: " << prop.totalConstMem/1e6 << " MB" << endl;
+    cout << "prop.totalGlobalMem: " << prop.totalGlobalMem/1e6 << " MB" << endl;
+    cout << "prop.sharedMemPerBlock: " << prop.sharedMemPerBlock/1e3 << " kB" << endl;
+    cout << "prop.l2CacheSize: " << prop.l2CacheSize << endl;
     cout << "prop.integrated: " << prop.integrated << endl;
     cout << "prop.gcnArchName: " << prop.gcnArchName << endl;
+    cout << "prop.globalL1CacheSupported: " << prop.globalL1CacheSupported << endl;
+    cout << "prop.maxSharedMemoryPerMultiProcessor: " << prop.maxSharedMemoryPerMultiProcessor << endl;
+    cout << "prop.maxGridSize: " << prop.maxGridSize << endl;
+    cout << "prop.maxThreadsPerBlock: " << prop.maxThreadsPerBlock << endl;
+    cout << "prop.maxThreadsPerMultiProcessor: " << prop.maxThreadsPerMultiProcessor << endl;
+    cout << "prop.maxThreadsDim: " << prop.maxThreadsDim << endl;
+    cout << "prop.multiProcessorCount: " << prop.multiProcessorCount << endl;
+    cout << "prop.name: " << prop.name << endl;
+    cout << "prop.reservedSharedMemPerBlock: " << prop.reservedSharedMemPerBlock << endl;
+    cout << "prop.sparseHipArraySupported: " << prop.sparseHipArraySupported << endl;
+    cout << "prop.warpSize: " << prop.warpSize << endl;
+    cout << "prop.managedMemory: " << prop.managedMemory << endl;
 }
 }
