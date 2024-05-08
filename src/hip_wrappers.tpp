@@ -54,4 +54,26 @@ void hipMemcpyToSymbol(T1& dev_const_mem_ptr, vector<int16_t> src)
         throw std::runtime_error(hipGetErrorString(result));
     }
 }
+
+template <typename T1>
+void hipMemcpyToSymbol(T1& dev_const_mem_ptr, const uint16_t* src, const size_t size)
+{
+    /*
+    Have to use a template for the device constant pointer because the
+    type of the array is not just a pointer of the data type it
+    contains, the type is specific to the length of the array.
+    */
+    const size_t offset = 0;
+    hipError_t result = ::hipMemcpyToSymbol(
+        HIP_SYMBOL(dev_const_mem_ptr),
+        src,
+        size,
+        offset,
+        hipMemcpyHostToDevice
+    );
+    if (result != hipSuccess)
+    {
+        throw std::runtime_error(hipGetErrorString(result));
+    }
+}
 } // namespace hip_wrappers
