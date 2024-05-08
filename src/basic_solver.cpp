@@ -12,6 +12,7 @@
 #include "hamiltonian_device.hpp"
 #include "hamiltonian_bitset_representation.hpp"
 #include "diagnostics.hpp"
+#include "macros.hpp"
 #include "../external/eigen-3.4.0/Eigen/Dense"
 #include "../external/eigen-3.4.0/Eigen/Eigenvalues"
 // #include "../external/boost_1_84_0/boost/container_hash/hash.hpp"
@@ -33,15 +34,10 @@ void gpu_init(const Interaction& interaction, const Indices& indices)
 {
     /*
     Add shit to constant memory.
-
-        const uint16_t creation_orb_idx_0 = indices.creation_orb_indices_0[i];
-        const uint16_t creation_orb_idx_1 = indices.creation_orb_indices_1[i];
-        const uint16_t annihilation_orb_idx_0 = indices.annihilation_orb_indices_0[i];
-        const uint16_t annihilation_orb_idx_1 = indices.annihilation_orb_indices_1[i];
-        const uint16_t j_coupled = indices.j_coupled[i];
-        const int16_t m_coupled = indices.m_coupled[i];
-        const double tbme = indices.tbme[i];
     */
+    hipDeviceProp_t prop;
+    const size_t device_id = 0;
+    HIP_ASSERT(hipGetDeviceProperties(&prop, device_id));
 
     const size_t coi_0 = indices.creation_orb_indices_0.size()*sizeof(uint16_t);
     const size_t coi_1 = indices.creation_orb_indices_1.size()*sizeof(uint16_t);
@@ -67,11 +63,10 @@ void gpu_init(const Interaction& interaction, const Indices& indices)
     cout << jc/1e3 << " kB" << " (" << indices.j_coupled.size() << " elements)" << endl;
     cout << mc/1e3 << " kB" << " (" << indices.m_coupled.size() << " elements)" << endl;
     cout << tbme/1e3 << " kB" << " (" << indices.tbme.size() << " elements)" << endl;
-    cout << "Total amount of data copied to __constant__ device mem: " << total/1e3 << " kB" << endl;
+    cout << total/1e6 << " MB __constant__ mem used of " << prop.totalConstMem/1e6 << " MB total (" << total*100.0/prop.totalConstMem << "%)" << endl;
     cout << diagnostics::DIAG_STR_END << endl;
 
-
-    diagnostics::print_gpu_mem_usage(interaction, indices);
+    diagnostics::print_gpu_diagnostics(interaction, indices);
     exit(0);
 }
 

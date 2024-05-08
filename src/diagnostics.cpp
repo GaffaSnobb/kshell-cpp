@@ -3,8 +3,7 @@
 #include "data_structures.hpp"
 #include "tools.hpp"
 #include "parameters.hpp"
-
-#define HIP_ASSERT(status) assert(status == hipSuccess)
+#include "macros.hpp"
 
 using std::cout;
 using std::endl;
@@ -47,12 +46,13 @@ void print_dtype_sizes()
     cout << DIAG_STR_END << endl;
 }
 
-void print_gpu_mem_usage(const Interaction& interaction, const Indices& indices)
+void print_gpu_diagnostics(const Interaction& interaction, const Indices& indices)
 {
     hipDeviceProp_t prop;
-    size_t device_id = 0;
+    const size_t device_id = 0;
     HIP_ASSERT(hipGetDeviceProperties(&prop, device_id));
     
+    cout << DIAG_STR_START << endl;
     cout << "prop.totalConstMem: " << prop.totalConstMem/1e6 << " MB" << endl;
     cout << "prop.totalGlobalMem: " << prop.totalGlobalMem/1e6 << " MB" << endl;
     cout << "prop.sharedMemPerBlock: " << prop.sharedMemPerBlock/1e3 << " kB" << endl;
@@ -71,5 +71,6 @@ void print_gpu_mem_usage(const Interaction& interaction, const Indices& indices)
     cout << "prop.sparseHipArraySupported: " << prop.sparseHipArraySupported << endl;
     cout << "prop.warpSize: " << prop.warpSize << endl;
     cout << "prop.managedMemory: " << prop.managedMemory << endl;
+    cout << DIAG_STR_END << endl;
 }
 }
