@@ -349,7 +349,7 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> create_hamiltonian_bitset_
     }
     cout << endl;   // For the progress bar.
     timer(start, "calculate_twobody_matrix_element_bit_representation");
-    complete_hermitian_matrix(H);    
+    complete_symmetric_matrix(H);    
     return H;
 }
 }
