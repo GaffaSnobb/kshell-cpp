@@ -56,6 +56,29 @@ void hipMemcpyToSymbol(T1& dev_const_mem_ptr, vector<int16_t> src)
 }
 
 template <typename T1>
+void hipMemcpyToSymbol(T1& dev_const_mem_ptr, vector<double> src)
+{
+    /*
+    I coud have templated double instead of overloading, but this way
+    I'm sure that T1 and the data type in the vector is the same. I cant
+    use T1 in vector<T1> because `dev_const_mem_ptr` is a constant size
+    T1 array of type T1 [<size>], not T1*.
+    */
+    const size_t offset = 0;
+    hipError_t result = ::hipMemcpyToSymbol(
+        HIP_SYMBOL(dev_const_mem_ptr),
+        src.data(),
+        sizeof(double)*src.size(),
+        offset,
+        hipMemcpyHostToDevice
+    );
+    if (result != hipSuccess)
+    {
+        throw std::runtime_error(hipGetErrorString(result));
+    }
+}
+
+template <typename T1>
 void hipMemcpyToSymbol(T1& dev_const_mem_ptr, const uint16_t* src, const size_t size)
 {
     /*

@@ -21,6 +21,9 @@ template <typename T1>
 void hipMemcpyToSymbol(T1& to_become_symbol, vector<int16_t> src);
 
 template <typename T1>
+void hipMemcpyToSymbol(T1& dev_const_mem_ptr, vector<double> src);
+
+template <typename T1>
 void hipMemcpyToSymbol(T1& dev_const_mem_ptr, const uint16_t* src, const size_t size);
 } // namespace hip_wrappers
 
