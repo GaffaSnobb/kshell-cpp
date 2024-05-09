@@ -23,14 +23,15 @@ units. `extern` just makes the entire compilation crash, and if I
 declare the arrays in a header, values I put into them do not persist
 across translation units.
 */
-__constant__ uint16_t orbital_idx_to_composite_m_idx_map_flattened_indices_const[CONST_MEM_ARR_LEN_N_ORBITALS];
 __constant__ uint16_t creation_orb_indices_0_const[CONST_MEM_ARR_LEN_INDICES];
 __constant__ uint16_t creation_orb_indices_1_const[CONST_MEM_ARR_LEN_INDICES];
 __constant__ uint16_t annihilation_orb_indices_0_const[CONST_MEM_ARR_LEN_INDICES];
 __constant__ uint16_t annihilation_orb_indices_1_const[CONST_MEM_ARR_LEN_INDICES];
 __constant__ uint16_t j_coupled_const[CONST_MEM_ARR_LEN_INDICES];
 __constant__ int16_t m_coupled_const[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t orbital_idx_to_composite_m_idx_map_flattened_indices_const[CONST_MEM_ARR_LEN_N_ORBITALS];
 __constant__ double tbme_const[CONST_MEM_ARR_LEN_INDICES];
+__constant__ double spe_const[CONST_MEM_ARR_LEN_N_ORBITALS];
 
 void gpu_init(const Interaction& interaction, const Indices& indices)
 {
@@ -41,15 +42,34 @@ void gpu_init(const Interaction& interaction, const Indices& indices)
     const size_t device_id = 0;
     HIP_ASSERT(hipGetDeviceProperties(&prop, device_id));
 
+    /*
+    Byte sizes. These are the amounts of bytes which have actual data in
+    them. The constant arrays are likely reserving more space than this,
+    as it is difficult to change the size of the constant arrays when
+    the size has to be known at compile-time. These sizes should however
+    never be larger than `CONST_MEM_ARR_LEN_INDICES` and
+    `CONST_MEM_ARR_LEN_N_ORBITALS`.
+    */
     const size_t coi_0 = indices.creation_orb_indices_0.size()*sizeof(uint16_t);
     const size_t coi_1 = indices.creation_orb_indices_1.size()*sizeof(uint16_t);
     const size_t aoi_0 = indices.annihilation_orb_indices_0.size()*sizeof(uint16_t);
     const size_t aoi_1 = indices.annihilation_orb_indices_1.size()*sizeof(uint16_t);
     const size_t jc = indices.j_coupled.size()*sizeof(uint16_t);
     const size_t mc = indices.m_coupled.size()*sizeof(int16_t);
-    const size_t tbme = indices.tbme.size()*sizeof(double);
     const size_t oitcmimf = interaction.model_space.orbitals.size()*sizeof(uint16_t);
-    const size_t total = coi_0 + coi_1 + aoi_0 + aoi_1 + jc + mc + tbme + oitcmimf;
+    const size_t tbme = indices.tbme.size()*sizeof(double);
+    const size_t spe = interaction.spe.size()*sizeof(double);
+    const size_t total = coi_0 + coi_1 + aoi_0 + aoi_1 + jc + mc + tbme + oitcmimf + spe;
+
+    assert(coi_0 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(coi_1 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(aoi_0 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(aoi_1 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(jc <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(mc <= (CONST_MEM_ARR_LEN_INDICES*sizeof(int16_t)));
+    assert(oitcmimf <= (CONST_MEM_ARR_LEN_N_ORBITALS*sizeof(uint16_t)));
+    assert(tbme <= (CONST_MEM_ARR_LEN_INDICES*sizeof(double)));
+    assert(spe <= (CONST_MEM_ARR_LEN_N_ORBITALS*sizeof(double)));
     
     hip_wrappers::hipMemcpyToSymbol(creation_orb_indices_0_const, indices.creation_orb_indices_0);
     hip_wrappers::hipMemcpyToSymbol(creation_orb_indices_1_const, indices.creation_orb_indices_1);
@@ -58,6 +78,8 @@ void gpu_init(const Interaction& interaction, const Indices& indices)
     hip_wrappers::hipMemcpyToSymbol(j_coupled_const, indices.j_coupled);
     hip_wrappers::hipMemcpyToSymbol(m_coupled_const, indices.m_coupled);
     hip_wrappers::hipMemcpyToSymbol(orbital_idx_to_composite_m_idx_map_flattened_indices_const, indices.orbital_idx_to_composite_m_idx_map_flattened_indices, oitcmimf);
+    hip_wrappers::hipMemcpyToSymbol(tbme_const, indices.tbme);
+    hip_wrappers::hipMemcpyToSymbol(spe_const, interaction.spe);
     
     cout << diagnostics::DIAG_STR_START << endl;
     cout << coi_0/1e3 << " kB" << " (" << indices.creation_orb_indices_0.size() << " elements)" << endl;
@@ -66,8 +88,9 @@ void gpu_init(const Interaction& interaction, const Indices& indices)
     cout << aoi_1/1e3 << " kB" << " (" << indices.annihilation_orb_indices_1.size() << " elements)" << endl;
     cout << jc/1e3 << " kB" << " (" << indices.j_coupled.size() << " elements)" << endl;
     cout << mc/1e3 << " kB" << " (" << indices.m_coupled.size() << " elements)" << endl;
-    cout << tbme/1e3 << " kB" << " (" << indices.tbme.size() << " elements)" << endl;
     cout << oitcmimf/1e3 << " kB" << " (" << interaction.model_space.orbitals.size() << " elements)" << endl;
+    cout << tbme/1e3 << " kB" << " (" << indices.tbme.size() << " elements)" << endl;
+    cout << spe/1e3 << " kB" << " (" << interaction.spe.size() << " elements)" << endl;
     cout << total/1e6 << " MB __constant__ mem used of " << prop.totalConstMem/1e6 << " MB total (" << total*100.0/prop.totalConstMem << "%)" << endl;
     cout << diagnostics::DIAG_STR_END << endl;
 
