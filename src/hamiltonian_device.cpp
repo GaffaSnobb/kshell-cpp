@@ -101,8 +101,6 @@ namespace hamiltonian_device
 {
 __device__ double calculate_onebody_matrix_element(
     const size_t n_orbitals,
-    const double* spe,
-    const uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices,
     const uint64_t& left_state,
     const uint64_t& right_state
 )
@@ -113,12 +111,9 @@ __device__ double calculate_onebody_matrix_element(
     
     for (uint16_t creation_and_annihilation_orb_idx = 0; creation_and_annihilation_orb_idx < n_orbitals; creation_and_annihilation_orb_idx++)
     {
-        // const uint16_t creation_end_m_idx =
-        //     orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
         const uint16_t creation_end_m_idx =
             orbital_idx_to_composite_m_idx_map_flattened_indices_const[creation_and_annihilation_orb_idx];
-        const uint16_t annihilation_end_m_idx =
-            orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
+        const uint16_t annihilation_end_m_idx = creation_end_m_idx;
 
         for (uint16_t creation_comp_m_idx = creation_start_m_idx; creation_comp_m_idx < creation_end_m_idx; creation_comp_m_idx++)
         {
@@ -139,7 +134,7 @@ __device__ double calculate_onebody_matrix_element(
 
                 // switch_ = switch_*(left_state == new_right_state);
                 if (left_state != new_right_state) continue;
-                onebody_res += annihilation_sign*creation_sign*spe[creation_and_annihilation_orb_idx];//*switch_;   // Or annihilation_orb_idx, they are the same.
+                onebody_res += annihilation_sign*creation_sign*spe_const[creation_and_annihilation_orb_idx];//*switch_;   // Or annihilation_orb_idx, they are the same.
             }
         }
         annihilation_start_m_idx = annihilation_end_m_idx; // Update annihilation_start_m_idx to the beginning of the next section of the map.
@@ -151,8 +146,6 @@ __device__ double calculate_onebody_matrix_element(
 __global__ void onebody_matrix_element_dispatcher(
     double* H_diag,
     const uint64_t* basis_states,
-    const double* spe,
-    const uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices,
     const uint32_t m_dim,
     const size_t n_orbitals
 )
@@ -169,8 +162,6 @@ __global__ void onebody_matrix_element_dispatcher(
         
         H_diag[idx] = calculate_onebody_matrix_element(
             n_orbitals,
-            spe,
-            orbital_idx_to_composite_m_idx_map_flattened_indices,
             left_state,
             right_state
         );
@@ -355,8 +346,6 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
             onebody_matrix_element_dispatcher, dim3(blocks_per_grid), dim3(threads_per_block), 0, 0,
             H_diag_device,
             basis_states_device,
-            spe_array_device,
-            orbital_idx_to_composite_m_idx_map_flattened_indices_device,
             m_dim,
             n_orbitals
         );
