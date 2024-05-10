@@ -166,12 +166,8 @@ __global__ void onebody_matrix_element_dispatcher(
     const size_t n_orbitals
 )
 {
-    const int32_t idx = blockIdx.x*blockDim.x + threadIdx.x;
-    // int32_t row_idx = idx/m_dim;
-    // int32_t col_idx = idx%m_dim;
+    const size_t idx = blockIdx.x*blockDim.x + threadIdx.x;
 
-    // if ((row_idx < m_dim) and (col_idx < m_dim) and (row_idx == col_idx))
-    // exit(0);
     if (idx < m_dim)
     {
         const uint64_t left_state = dev_basis_states[idx];
@@ -186,7 +182,7 @@ __global__ void onebody_matrix_element_dispatcher(
 }
 
 __device__ double calculate_twobody_matrix_element(
-    const Indices& indices,
+    const size_t n_orbitals,
     const uint64_t& left_state,
     const uint64_t& right_state
 )
@@ -308,30 +304,27 @@ __device__ double calculate_twobody_matrix_element(
 }
 
 __global__ void twobody_matrix_element_dispatcher(
-    double* H_diag,
-    const uint64_t* basis_states,
-    const uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices,
+    double* H,
+    const uint64_t* dev_basis_states,
     const uint32_t m_dim,
     const size_t n_orbitals
 )
 {
-    const size_t idx = blockIdx.x*blockDim.x + threadIdx.x;
-    // int32_t row_idx = idx/m_dim;
-    // int32_t col_idx = idx%m_dim;
+    const size_t col_idx = blockIdx.x*blockDim.x + threadIdx.x;
+    const size_t row_idx = blockIdx.y*blockDim.y + threadIdx.y;
+    const size_t idx = row_idx*m_dim + col_idx;
+    // printf("(r, c): (%zu, %zu)\n", row_idx, col_idx);
 
-    // if ((row_idx < m_dim) and (col_idx < m_dim) and (row_idx == col_idx))
-    if (idx < m_dim)
+    if ((col_idx < m_dim) and (row_idx < m_dim))
     {
-        // const uint64_t left_state = basis_states[idx];
-        // const uint64_t right_state = basis_states[idx];
+        const uint64_t left_state = dev_basis_states[row_idx];
+        const uint64_t right_state = dev_basis_states[col_idx];
         
-        // H_diag[idx] = calculate_twobody_matrix_element( // HEREE!!!
-        //     n_orbitals,
-        //     spe,
-        //     orbital_idx_to_composite_m_idx_map_flattened_indices,
-        //     left_state,
-        //     right_state
-        // );
+        H[idx] = calculate_twobody_matrix_element(
+            n_orbitals,
+            left_state,
+            right_state
+        );
     }
 }
 
@@ -341,25 +334,39 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
     dev_init(interaction, indices, dev_basis_states);
     const size_t m_dim = interaction.basis_states.size();
     const size_t n_orbitals = interaction.model_space.n_orbitals;
-    const size_t threads_per_block = 128;
-    const size_t blocks_per_grid = (m_dim + threads_per_block - 1)/threads_per_block;
-    double* H_diag_device = nullptr;
+    static __device__ double* dev_H_diag = nullptr;
     double* H_diag_tmp = new double[m_dim];
     
     auto start = timer();
-        hip_wrappers::hipMalloc(&H_diag_device, m_dim*sizeof(double));
+        const size_t threads_per_block_onebody = 2;
+        const size_t blocks_per_grid_onebody = (m_dim + threads_per_block_onebody - 1)/threads_per_block_onebody;
+        
+        hip_wrappers::hipMalloc(&dev_H_diag, m_dim*sizeof(double));
         
         hipLaunchKernelGGL(
-            onebody_matrix_element_dispatcher, dim3(blocks_per_grid), dim3(threads_per_block), 0, 0,
-            H_diag_device,
+            onebody_matrix_element_dispatcher, dim3(blocks_per_grid_onebody), dim3(threads_per_block_onebody), 0, 0,
+            dev_H_diag,
             dev_basis_states,
             m_dim,
             n_orbitals
         );
         hip_wrappers::hipDeviceSynchronize();
 
-        hip_wrappers::hipMemcpy(H_diag_tmp, H_diag_device, m_dim*sizeof(double), hipMemcpyDeviceToHost);
-        hip_wrappers::hipFree(H_diag_device);
+        const size_t block_dim = 16;
+        const dim3 threads_per_block_twobody(block_dim, block_dim);
+        const dim3 blocks_per_grid_twobody(ceil(m_dim/((double)block_dim)), ceil(m_dim/((double)block_dim)));
+
+        hipLaunchKernelGGL(
+            twobody_matrix_element_dispatcher, blocks_per_grid_twobody, threads_per_block_twobody, 0, 0,
+            dev_H_diag,
+            dev_basis_states,
+            m_dim,
+            n_orbitals
+        );
+        hip_wrappers::hipDeviceSynchronize();
+
+        hip_wrappers::hipMemcpy(H_diag_tmp, dev_H_diag, m_dim*sizeof(double), hipMemcpyDeviceToHost);
+        hip_wrappers::hipFree(dev_H_diag);
     timer(start, "[DEVICE] one-body calc, alloc, copy, and free time");
 
     for (size_t diag_idx = 0; diag_idx < m_dim; diag_idx++) H[diag_idx*m_dim + diag_idx] = H_diag_tmp[diag_idx]; // Copy data to the diagonal of H.
