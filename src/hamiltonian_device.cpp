@@ -23,17 +23,21 @@ units. `extern` just makes the entire compilation crash, and if I
 declare the arrays in a header, values I put into them do not persist
 across translation units.
 */
-__constant__ uint16_t creation_orb_indices_0_const[CONST_MEM_ARR_LEN_INDICES];
-__constant__ uint16_t creation_orb_indices_1_const[CONST_MEM_ARR_LEN_INDICES];
-__constant__ uint16_t annihilation_orb_indices_0_const[CONST_MEM_ARR_LEN_INDICES];
-__constant__ uint16_t annihilation_orb_indices_1_const[CONST_MEM_ARR_LEN_INDICES];
-__constant__ uint16_t j_coupled_const[CONST_MEM_ARR_LEN_INDICES];
-__constant__ int16_t m_coupled_const[CONST_MEM_ARR_LEN_INDICES];
-__constant__ uint16_t orbital_idx_to_composite_m_idx_map_flattened_indices_const[CONST_MEM_ARR_LEN_N_ORBITALS];
-__constant__ double tbme_const[CONST_MEM_ARR_LEN_INDICES];
-__constant__ double spe_const[CONST_MEM_ARR_LEN_N_ORBITALS];
+__constant__ uint16_t dev_const_creation_orb_indices_0[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_creation_orb_indices_1[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_annihilation_orb_indices_0[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_annihilation_orb_indices_1[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_j_coupled[CONST_MEM_ARR_LEN_INDICES];
+__constant__ int16_t dev_const_m_coupled[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_orbital_idx_to_composite_m_idx_map_flattened_indices[CONST_MEM_ARR_LEN_N_ORBITALS];
+__constant__ double dev_const_tbme[CONST_MEM_ARR_LEN_INDICES];
+__constant__ double dev_const_spe[CONST_MEM_ARR_LEN_N_ORBITALS];
 
-void gpu_init(const Interaction& interaction, const Indices& indices)
+__host__ void dev_init(
+    const Interaction& interaction,
+    const Indices& indices,
+    uint64_t*& dev_basis_states
+)
 {
     /*
     Add shit to constant memory.
@@ -41,6 +45,8 @@ void gpu_init(const Interaction& interaction, const Indices& indices)
     hipDeviceProp_t prop;
     const size_t device_id = 0;
     HIP_ASSERT(hipGetDeviceProperties(&prop, device_id));
+
+    const size_t m_dim = interaction.basis_states.size();
 
     /*
     Byte sizes. These are the amounts of bytes which have actual data in
@@ -71,15 +77,16 @@ void gpu_init(const Interaction& interaction, const Indices& indices)
     assert(tbme <= (CONST_MEM_ARR_LEN_INDICES*sizeof(double)));
     assert(spe <= (CONST_MEM_ARR_LEN_N_ORBITALS*sizeof(double)));
     
-    hip_wrappers::hipMemcpyToSymbol(creation_orb_indices_0_const, indices.creation_orb_indices_0);
-    hip_wrappers::hipMemcpyToSymbol(creation_orb_indices_1_const, indices.creation_orb_indices_1);
-    hip_wrappers::hipMemcpyToSymbol(annihilation_orb_indices_0_const, indices.annihilation_orb_indices_0);
-    hip_wrappers::hipMemcpyToSymbol(annihilation_orb_indices_1_const, indices.annihilation_orb_indices_1);
-    hip_wrappers::hipMemcpyToSymbol(j_coupled_const, indices.j_coupled);
-    hip_wrappers::hipMemcpyToSymbol(m_coupled_const, indices.m_coupled);
-    hip_wrappers::hipMemcpyToSymbol(orbital_idx_to_composite_m_idx_map_flattened_indices_const, indices.orbital_idx_to_composite_m_idx_map_flattened_indices, oitcmimf);
-    hip_wrappers::hipMemcpyToSymbol(tbme_const, indices.tbme);
-    hip_wrappers::hipMemcpyToSymbol(spe_const, interaction.spe);
+    // Constant device arrays.
+    hip_wrappers::hipMemcpyToSymbol(dev_const_creation_orb_indices_0, indices.creation_orb_indices_0);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_creation_orb_indices_1, indices.creation_orb_indices_1);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_annihilation_orb_indices_0, indices.annihilation_orb_indices_0);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_annihilation_orb_indices_1, indices.annihilation_orb_indices_1);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_j_coupled, indices.j_coupled);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_m_coupled, indices.m_coupled);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_orbital_idx_to_composite_m_idx_map_flattened_indices, indices.orbital_idx_to_composite_m_idx_map_flattened_indices, oitcmimf);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_tbme, indices.tbme);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_spe, interaction.spe);
     
     cout << diagnostics::DIAG_STR_START << endl;
     cout << coi_0/1e3 << " kB" << " (" << indices.creation_orb_indices_0.size() << " elements)" << endl;
@@ -95,6 +102,15 @@ void gpu_init(const Interaction& interaction, const Indices& indices)
     cout << diagnostics::DIAG_STR_END << endl;
 
     diagnostics::print_gpu_diagnostics(interaction, indices);
+    
+    // Device arrays.
+    hip_wrappers::hipMalloc(&dev_basis_states, m_dim*sizeof(uint64_t));
+    hip_wrappers::hipMemcpy(dev_basis_states, interaction.basis_states.data(), m_dim*sizeof(uint64_t), hipMemcpyHostToDevice);
+}
+
+__host__ void dev_uninit(uint64_t*& dev_basis_states)
+{
+    hip_wrappers::hipFree(dev_basis_states);
 }
 
 namespace hamiltonian_device
@@ -112,7 +128,7 @@ __device__ double calculate_onebody_matrix_element(
     for (uint16_t creation_and_annihilation_orb_idx = 0; creation_and_annihilation_orb_idx < n_orbitals; creation_and_annihilation_orb_idx++)
     {
         const uint16_t creation_end_m_idx =
-            orbital_idx_to_composite_m_idx_map_flattened_indices_const[creation_and_annihilation_orb_idx];
+            dev_const_orbital_idx_to_composite_m_idx_map_flattened_indices[creation_and_annihilation_orb_idx];
         const uint16_t annihilation_end_m_idx = creation_end_m_idx;
 
         for (uint16_t creation_comp_m_idx = creation_start_m_idx; creation_comp_m_idx < creation_end_m_idx; creation_comp_m_idx++)
@@ -134,7 +150,7 @@ __device__ double calculate_onebody_matrix_element(
 
                 // switch_ = switch_*(left_state == new_right_state);
                 if (left_state != new_right_state) continue;
-                onebody_res += annihilation_sign*creation_sign*spe_const[creation_and_annihilation_orb_idx];//*switch_;   // Or annihilation_orb_idx, they are the same.
+                onebody_res += annihilation_sign*creation_sign*dev_const_spe[creation_and_annihilation_orb_idx];//*switch_;   // Or annihilation_orb_idx, they are the same.
             }
         }
         annihilation_start_m_idx = annihilation_end_m_idx; // Update annihilation_start_m_idx to the beginning of the next section of the map.
@@ -145,7 +161,7 @@ __device__ double calculate_onebody_matrix_element(
 
 __global__ void onebody_matrix_element_dispatcher(
     double* H_diag,
-    const uint64_t* basis_states,
+    const uint64_t* dev_basis_states,
     const uint32_t m_dim,
     const size_t n_orbitals
 )
@@ -155,10 +171,11 @@ __global__ void onebody_matrix_element_dispatcher(
     // int32_t col_idx = idx%m_dim;
 
     // if ((row_idx < m_dim) and (col_idx < m_dim) and (row_idx == col_idx))
+    // exit(0);
     if (idx < m_dim)
     {
-        const uint64_t left_state = basis_states[idx];
-        const uint64_t right_state = basis_states[idx];
+        const uint64_t left_state = dev_basis_states[idx];
+        const uint64_t right_state = dev_basis_states[idx];
         
         H_diag[idx] = calculate_onebody_matrix_element(
             n_orbitals,
@@ -305,8 +322,8 @@ __global__ void twobody_matrix_element_dispatcher(
     // if ((row_idx < m_dim) and (col_idx < m_dim) and (row_idx == col_idx))
     if (idx < m_dim)
     {
-        const uint64_t left_state = basis_states[idx];
-        const uint64_t right_state = basis_states[idx];
+        // const uint64_t left_state = basis_states[idx];
+        // const uint64_t right_state = basis_states[idx];
         
         // H_diag[idx] = calculate_twobody_matrix_element( // HEREE!!!
         //     n_orbitals,
@@ -320,32 +337,22 @@ __global__ void twobody_matrix_element_dispatcher(
 
 void create_hamiltonian_device_dispatcher(const Interaction& interaction, const Indices& indices, double* H)
 {
-    gpu_init(interaction, indices);
+    static __device__ uint64_t* dev_basis_states = nullptr;
+    dev_init(interaction, indices, dev_basis_states);
     const size_t m_dim = interaction.basis_states.size();
     const size_t n_orbitals = interaction.model_space.n_orbitals;
     const size_t threads_per_block = 128;
     const size_t blocks_per_grid = (m_dim + threads_per_block - 1)/threads_per_block;
     double* H_diag_device = nullptr;
-    double* spe_array_device = nullptr;
-    uint16_t* orbital_idx_to_composite_m_idx_map_flattened_indices_device = nullptr;
     double* H_diag_tmp = new double[m_dim];
-    
-    uint64_t* basis_states_device = nullptr;
-    hip_wrappers::hipMalloc(&basis_states_device, m_dim*sizeof(uint64_t));
-    hip_wrappers::hipMemcpy(basis_states_device, interaction.basis_states.data(), m_dim*sizeof(uint64_t), hipMemcpyHostToDevice);
     
     auto start = timer();
         hip_wrappers::hipMalloc(&H_diag_device, m_dim*sizeof(double));
-        hip_wrappers::hipMalloc(&spe_array_device, n_orbitals*sizeof(double));
-        hip_wrappers::hipMalloc(&orbital_idx_to_composite_m_idx_map_flattened_indices_device, n_orbitals*sizeof(uint16_t));
         
-        hip_wrappers::hipMemcpy(spe_array_device, interaction.spe_array, n_orbitals*sizeof(double), hipMemcpyHostToDevice);
-        hip_wrappers::hipMemcpy(orbital_idx_to_composite_m_idx_map_flattened_indices_device, indices.orbital_idx_to_composite_m_idx_map_flattened_indices, n_orbitals*sizeof(uint16_t), hipMemcpyHostToDevice);
-
         hipLaunchKernelGGL(
             onebody_matrix_element_dispatcher, dim3(blocks_per_grid), dim3(threads_per_block), 0, 0,
             H_diag_device,
-            basis_states_device,
+            dev_basis_states,
             m_dim,
             n_orbitals
         );
@@ -353,12 +360,10 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
 
         hip_wrappers::hipMemcpy(H_diag_tmp, H_diag_device, m_dim*sizeof(double), hipMemcpyDeviceToHost);
         hip_wrappers::hipFree(H_diag_device);
-        hip_wrappers::hipFree(spe_array_device);
-        hip_wrappers::hipFree(orbital_idx_to_composite_m_idx_map_flattened_indices_device);
     timer(start, "[DEVICE] one-body calc, alloc, copy, and free time");
 
-    hip_wrappers::hipFree(basis_states_device);
     for (size_t diag_idx = 0; diag_idx < m_dim; diag_idx++) H[diag_idx*m_dim + diag_idx] = H_diag_tmp[diag_idx]; // Copy data to the diagonal of H.
     delete[] H_diag_tmp;
+    dev_uninit(dev_basis_states);
 }
 }
