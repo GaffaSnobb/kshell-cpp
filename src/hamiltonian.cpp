@@ -483,32 +483,32 @@ void create_hamiltonian_primitive_bit_representation_reference(const Interaction
     }
     timer(start, "[HOST][REFERENCE] one-body calc time");
 
-    // start = timer();
-    // int32_t thread_id = omp_get_thread_num();
-    // std::vector<long long> loop_timings;
-    // auto loop_timer = timer();
+    start = timer();
+    int32_t thread_id = omp_get_thread_num();
+    std::vector<long long> loop_timings;
+    auto loop_timer = timer();
 
-    // for (size_t row_idx = 0; row_idx < m_dim; row_idx++)
-    // {   
-    //     if (thread_id == 0) loop_timer = timer();
+    for (size_t row_idx = 0; row_idx < m_dim; row_idx++)
+    {   
+        if (thread_id == 0) loop_timer = timer();
         
-    //     #pragma omp parallel for
-    //     for (size_t col_idx = row_idx; col_idx < m_dim; col_idx++)
-    //     {    
-    //         H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation(
-    //             indices,
-    //             interaction.basis_states[row_idx],
-    //             interaction.basis_states[col_idx]
-    //         );
-    //     }
-    //     if ((thread_id == 0) and (row_idx%10 == 0))
-    //     {
-    //         loop_timings.push_back(timer(loop_timer));
-    //         print_loop_timer(loop_timings, row_idx, m_dim);
-    //     }
-    // }
-    // cout << endl;   // For the progress bar.
-    // timer(start, "[HOST][REFERENCE] two-body calc time");
-    // // complete_hermitian_matrix(H);
+        #pragma omp parallel for
+        for (size_t col_idx = row_idx; col_idx < m_dim; col_idx++)
+        {    
+            H[row_idx*m_dim + col_idx] += calculate_twobody_matrix_element_primitive_bit_representation(
+                indices,
+                interaction.basis_states[row_idx],
+                interaction.basis_states[col_idx]
+            );
+        }
+        if ((thread_id == 0) and (row_idx%10 == 0))
+        {
+            loop_timings.push_back(timer(loop_timer));
+            print_loop_timer(loop_timings, row_idx, m_dim);
+        }
+    }
+    cout << endl;   // For the progress bar.
+    timer(start, "[HOST][REFERENCE] two-body calc time");
+    // complete_hermitian_matrix(H);
 }
 }
