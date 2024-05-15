@@ -33,6 +33,17 @@ __constant__ uint16_t dev_const_orbital_idx_to_composite_m_idx_map_flattened_ind
 __constant__ double dev_const_tbme[CONST_MEM_ARR_LEN_INDICES];
 __constant__ double dev_const_spe[CONST_MEM_ARR_LEN_N_ORBITALS];
 
+__constant__ uint16_t dev_const_annihilation_comp_m_start_idx_0[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_annihilation_comp_m_end_idx_0[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_annihilation_comp_m_start_idx_1[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_annihilation_comp_m_end_idx_1[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_creation_comp_m_start_idx_0[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_creation_comp_m_end_idx_0[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_creation_comp_m_start_idx_1[CONST_MEM_ARR_LEN_INDICES];
+__constant__ uint16_t dev_const_creation_comp_m_end_idx_1[CONST_MEM_ARR_LEN_INDICES];
+__constant__ int16_t dev_const_composite_m_idx_to_m_map[CONST_MEM_ARR_LEN_MODEL_SPACE_DEGENERACY];
+__constant__ uint16_t dev_const_orbital_idx_to_j_map[CONST_MEM_ARR_LEN_N_ORBITALS];
+
 __host__ void dev_init(
     const Interaction& interaction,
     const Indices& indices,
@@ -65,7 +76,19 @@ __host__ void dev_init(
     const size_t oitcmimf = interaction.model_space.orbitals.size()*sizeof(uint16_t);
     const size_t tbme = indices.tbme.size()*sizeof(double);
     const size_t spe = interaction.spe.size()*sizeof(double);
-    const size_t total = coi_0 + coi_1 + aoi_0 + aoi_1 + jc + mc + tbme + oitcmimf + spe;
+
+    const size_t acmsi_0 = indices.annihilation_comp_m_start_idx_0.size()*sizeof(uint16_t);
+    const size_t acmei_0 = indices.annihilation_comp_m_end_idx_0.size()*sizeof(uint16_t);
+    const size_t acmsi_1 = indices.annihilation_comp_m_start_idx_1.size()*sizeof(uint16_t);
+    const size_t acmei_1 = indices.annihilation_comp_m_end_idx_1.size()*sizeof(uint16_t);
+    const size_t ccmsi_0 = indices.creation_comp_m_start_idx_0.size()*sizeof(uint16_t);
+    const size_t ccmei_0 = indices.creation_comp_m_end_idx_0.size()*sizeof(uint16_t);
+    const size_t ccmsi_1 = indices.creation_comp_m_start_idx_1.size()*sizeof(uint16_t);
+    const size_t ccmei_1 = indices.creation_comp_m_end_idx_1.size()*sizeof(uint16_t);
+    const size_t cmitmm = indices.composite_m_idx_to_m_map.size()*sizeof(int16_t);
+    const size_t oitjm = indices.orbital_idx_to_j_map.size()*sizeof(uint16_t);
+
+    const size_t total = coi_0 + coi_1 + aoi_0 + aoi_1 + jc + mc + tbme + oitcmimf + spe + acmsi_0 + acmei_0 + acmsi_1 + acmei_1 + ccmsi_0 + ccmei_0 + ccmsi_1 + ccmei_1 + cmitmm + oitjm;
 
     assert(coi_0 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
     assert(coi_1 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
@@ -76,6 +99,17 @@ __host__ void dev_init(
     assert(oitcmimf <= (CONST_MEM_ARR_LEN_N_ORBITALS*sizeof(uint16_t)));
     assert(tbme <= (CONST_MEM_ARR_LEN_INDICES*sizeof(double)));
     assert(spe <= (CONST_MEM_ARR_LEN_N_ORBITALS*sizeof(double)));
+
+    assert(acmsi_0 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(acmei_0 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(acmsi_1 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(acmei_1 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(ccmsi_0 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(ccmei_0 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(ccmsi_1 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(ccmei_1 <= (CONST_MEM_ARR_LEN_INDICES*sizeof(uint16_t)));
+    assert(cmitmm <= (CONST_MEM_ARR_LEN_MODEL_SPACE_DEGENERACY*sizeof(int16_t)));
+    assert(oitjm <= (CONST_MEM_ARR_LEN_N_ORBITALS*sizeof(uint16_t)));
     
     // Constant device arrays.
     hip_wrappers::hipMemcpyToSymbol(dev_const_creation_orb_indices_0, indices.creation_orb_indices_0);
@@ -87,6 +121,17 @@ __host__ void dev_init(
     hip_wrappers::hipMemcpyToSymbol(dev_const_orbital_idx_to_composite_m_idx_map_flattened_indices, indices.orbital_idx_to_composite_m_idx_map_flattened_indices, oitcmimf);
     hip_wrappers::hipMemcpyToSymbol(dev_const_tbme, indices.tbme);
     hip_wrappers::hipMemcpyToSymbol(dev_const_spe, interaction.spe);
+
+    hip_wrappers::hipMemcpyToSymbol(dev_const_annihilation_comp_m_start_idx_0, indices.annihilation_comp_m_start_idx_0);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_annihilation_comp_m_end_idx_0, indices.annihilation_comp_m_end_idx_0);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_annihilation_comp_m_start_idx_1, indices.annihilation_comp_m_start_idx_1);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_annihilation_comp_m_end_idx_1, indices.annihilation_comp_m_end_idx_1);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_creation_comp_m_start_idx_0, indices.creation_comp_m_start_idx_0);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_creation_comp_m_end_idx_0, indices.creation_comp_m_end_idx_0);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_creation_comp_m_start_idx_1, indices.creation_comp_m_start_idx_1);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_creation_comp_m_end_idx_1, indices.creation_comp_m_end_idx_1);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_composite_m_idx_to_m_map, indices.composite_m_idx_to_m_map);
+    hip_wrappers::hipMemcpyToSymbol(dev_const_orbital_idx_to_j_map, indices.orbital_idx_to_j_map);
     
     cout << diagnostics::DIAG_STR_START << endl;
     cout << coi_0/1e3 << " kB" << " (" << indices.creation_orb_indices_0.size() << " elements)" << endl;
@@ -99,6 +144,18 @@ __host__ void dev_init(
     cout << tbme/1e3 << " kB" << " (" << indices.tbme.size() << " elements)" << endl;
     cout << spe/1e3 << " kB" << " (" << interaction.spe.size() << " elements)" << endl;
     cout << total/1e6 << " MB __constant__ mem used of " << prop.totalConstMem/1e6 << " MB total (" << total*100.0/prop.totalConstMem << "%)" << endl;
+
+    cout << acmsi_0/1e3 << " kB" << " (" << indices.annihilation_comp_m_start_idx_0.size() << " elements)" << endl;
+    cout << acmei_0/1e3 << " kB" << " (" << indices.annihilation_comp_m_end_idx_0.size() << " elements)" << endl;
+    cout << acmsi_1/1e3 << " kB" << " (" << indices.annihilation_comp_m_start_idx_1.size() << " elements)" << endl;
+    cout << acmei_1/1e3 << " kB" << " (" << indices.annihilation_comp_m_end_idx_1.size() << " elements)" << endl;
+    cout << ccmsi_0/1e3 << " kB" << " (" << indices.creation_comp_m_start_idx_0.size() << " elements)" << endl;
+    cout << ccmei_0/1e3 << " kB" << " (" << indices.creation_comp_m_end_idx_0.size() << " elements)" << endl;
+    cout << ccmsi_1/1e3 << " kB" << " (" << indices.creation_comp_m_start_idx_1.size() << " elements)" << endl;
+    cout << ccmei_1/1e3 << " kB" << " (" << indices.creation_comp_m_end_idx_1.size() << " elements)" << endl;
+    cout << cmitmm/1e3 << " kB" << " (" << indices.composite_m_idx_to_m_map.size() << " elements)" << endl;
+    cout << oitjm/1e3 << " kB" << " (" << indices.orbital_idx_to_j_map.size() << " elements)" << endl;
+
     cout << diagnostics::DIAG_STR_END << endl;
 
     diagnostics::print_gpu_diagnostics(interaction, indices);
@@ -183,6 +240,7 @@ __global__ void onebody_matrix_element_dispatcher(
 
 __device__ double calculate_twobody_matrix_element(
     const size_t n_orbitals,
+    const size_t n_indices,
     const uint64_t& left_state,
     const uint64_t& right_state
 )
@@ -192,28 +250,38 @@ __device__ double calculate_twobody_matrix_element(
 
     double twobody_res = 0;
     // double creation_res_switch = 0; // For removing if statements in the inner creation loop. Multiply the result by 0 instead of using if (condition) continue;.
-    const uint32_t n_indices = indices.creation_orb_indices_0.size();
     for (size_t i = 0; i < n_indices; i++)
     {
-        const uint16_t creation_orb_idx_0 = indices.creation_orb_indices_0[i];
-        const uint16_t creation_orb_idx_1 = indices.creation_orb_indices_1[i];
-        const uint16_t annihilation_orb_idx_0 = indices.annihilation_orb_indices_0[i];
-        const uint16_t annihilation_orb_idx_1 = indices.annihilation_orb_indices_1[i];
-        const uint16_t j_coupled = indices.j_coupled[i];
-        const int16_t m_coupled = indices.m_coupled[i];
-        const double tbme = indices.tbme[i];
+        const uint16_t creation_orb_idx_0 = dev_const_creation_orb_indices_0[i];
+        const uint16_t creation_orb_idx_1 = dev_const_creation_orb_indices_1[i];
+        const uint16_t annihilation_orb_idx_0 = dev_const_annihilation_orb_indices_0[i];
+        const uint16_t annihilation_orb_idx_1 = dev_const_annihilation_orb_indices_1[i];
+        const uint16_t j_coupled = dev_const_j_coupled[i];
+        const int16_t m_coupled = dev_const_m_coupled[i];
+        const double tbme = dev_const_tbme[i];
 
-        const double creation_norm = inverse_sqrt_2[creation_orb_idx_0 == creation_orb_idx_1];
-        const double annihilation_norm = inverse_sqrt_2[annihilation_orb_idx_0 == annihilation_orb_idx_1];
+        const uint16_t annihilation_comp_m_start_idx_0 = dev_const_annihilation_comp_m_start_idx_0[i];
+        const uint16_t annihilation_comp_m_end_idx_0 = dev_const_annihilation_comp_m_end_idx_0[i];
+        const uint16_t annihilation_comp_m_start_idx_1 = dev_const_annihilation_comp_m_start_idx_1[i];
+        const uint16_t annihilation_comp_m_end_idx_1 = dev_const_annihilation_comp_m_end_idx_1[i];
+        const uint16_t creation_comp_m_start_idx_0 = dev_const_creation_comp_m_start_idx_0[i];
+        const uint16_t creation_comp_m_end_idx_0 = dev_const_creation_comp_m_end_idx_0[i];
+        const uint16_t creation_comp_m_start_idx_1 = dev_const_creation_comp_m_start_idx_1[i];
+        const uint16_t creation_comp_m_end_idx_1 = dev_const_creation_comp_m_end_idx_1[i];
+
+        const double creation_norm = dev_const_inverse_sqrt_2[creation_orb_idx_0 == creation_orb_idx_1];
+        const double annihilation_norm = dev_const_inverse_sqrt_2[annihilation_orb_idx_0 == annihilation_orb_idx_1];
 
         // Annihilation terms
-        for (uint16_t annihilation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0])
+        // for (uint16_t annihilation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0])
+        for (uint16_t annihilation_comp_m_idx_0 = annihilation_comp_m_start_idx_0; annihilation_comp_m_idx_0 < annihilation_comp_m_end_idx_0; annihilation_comp_m_idx_0++)
         {
-            for (uint16_t annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
+            // for (uint16_t annihilation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1])
+            for (uint16_t annihilation_comp_m_idx_1 = annihilation_comp_m_start_idx_1; annihilation_comp_m_idx_1 < annihilation_comp_m_end_idx_1; annihilation_comp_m_idx_1++)
             {
                 if (
-                    (indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0] +  // m1
-                    indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1]) != // m2
+                    (dev_const_composite_m_idx_to_m_map[annihilation_comp_m_idx_0] +  // m1
+                    dev_const_composite_m_idx_to_m_map[annihilation_comp_m_idx_1]) != // m2
                     m_coupled                                                       // M
                 )
                 {
@@ -238,25 +306,27 @@ __device__ double calculate_twobody_matrix_element(
                 const uint16_t n_operator_swaps_annihilation_1 = bittools_device::reset_bit_and_count_swaps(new_right_state_annihilation, annihilation_comp_m_idx_1);
                 annihilation_sign *= bittools_device::negative_one_pow(n_operator_swaps_annihilation_1);
                 
-                j1_idx = (indices.orbital_idx_to_j_map[annihilation_orb_idx_0] + 1)/2 - 1;
-                m1_idx = (indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_0] + 5)/2;
-                j2_idx = (indices.orbital_idx_to_j_map[annihilation_orb_idx_1] + 1)/2 - 1;
-                m2_idx = (indices.composite_m_idx_to_m_map[annihilation_comp_m_idx_1] + 5)/2;
+                j1_idx = (dev_const_orbital_idx_to_j_map[annihilation_orb_idx_0] + 1)/2 - 1;
+                m1_idx = (dev_const_composite_m_idx_to_m_map[annihilation_comp_m_idx_0] + 5)/2;
+                j2_idx = (dev_const_orbital_idx_to_j_map[annihilation_orb_idx_1] + 1)/2 - 1;
+                m2_idx = (dev_const_composite_m_idx_to_m_map[annihilation_comp_m_idx_1] + 5)/2;
                 j3_idx = j_coupled/2;
                 flat_cg_idx = ((((j1_idx*6 + m1_idx)*3 + j2_idx)*6 + m2_idx)*6 + j3_idx);    // Indexing a 1D array as if it was a 5D array.
 
-                const double cg_annihilation = clebsch_gordan_array[flat_cg_idx];
+                const double cg_annihilation = dev_const_clebsch_gordan_array[flat_cg_idx];
 
                 // Creation terms
                 double creation_res = 0.0;
 
-                for (uint16_t creation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_0])
+                // for (uint16_t creation_comp_m_idx_0 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_0])
+                for (uint16_t creation_comp_m_idx_0 = creation_comp_m_start_idx_0; creation_comp_m_idx_0 < creation_comp_m_end_idx_0; creation_comp_m_idx_0++)
                 {
-                    for (uint16_t creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
+                    // for (uint16_t creation_comp_m_idx_1 : indices.orbital_idx_to_composite_m_idx_map[creation_orb_idx_1])
+                    for (uint16_t creation_comp_m_idx_1 = creation_comp_m_start_idx_1; creation_comp_m_idx_1 < creation_comp_m_end_idx_1; creation_comp_m_idx_1++)
                     {   
                         if (
-                            (indices.composite_m_idx_to_m_map[creation_comp_m_idx_0] +  // m1
-                            indices.composite_m_idx_to_m_map[creation_comp_m_idx_1]) != // m2
+                            (dev_const_composite_m_idx_to_m_map[creation_comp_m_idx_0] +  // m1
+                            dev_const_composite_m_idx_to_m_map[creation_comp_m_idx_1]) != // m2
                             m_coupled                                                   // M
                         )
                         {
@@ -284,13 +354,13 @@ __device__ double calculate_twobody_matrix_element(
                         if (left_state != new_right_state_creation) continue;
                         // creation_res_switch *= (left_state == new_right_state_creation);
 
-                        j1_idx = (indices.orbital_idx_to_j_map[creation_orb_idx_0] + 1)/2 - 1;
-                        m1_idx = (indices.composite_m_idx_to_m_map[creation_comp_m_idx_0] + 5)/2;
-                        j2_idx = (indices.orbital_idx_to_j_map[creation_orb_idx_1] + 1)/2 - 1;
-                        m2_idx = (indices.composite_m_idx_to_m_map[creation_comp_m_idx_1] + 5)/2;
+                        j1_idx = (dev_const_orbital_idx_to_j_map[creation_orb_idx_0] + 1)/2 - 1;
+                        m1_idx = (dev_const_composite_m_idx_to_m_map[creation_comp_m_idx_0] + 5)/2;
+                        j2_idx = (dev_const_orbital_idx_to_j_map[creation_orb_idx_1] + 1)/2 - 1;
+                        m2_idx = (dev_const_composite_m_idx_to_m_map[creation_comp_m_idx_1] + 5)/2;
                         flat_cg_idx = ((((j1_idx*6 + m1_idx)*3 + j2_idx)*6 + m2_idx)*6 + j3_idx);    // Indexing a 1D array as if it was a 5D array.
 
-                        const double cg_creation = clebsch_gordan_array[flat_cg_idx];
+                        const double cg_creation = dev_const_clebsch_gordan_array[flat_cg_idx];
 
                         // if (cg_creation == 0) continue;  // Might be faster to just multiply with 0 instead of checking.
                         creation_res += creation_sign*cg_creation;//*creation_res_switch;
@@ -307,7 +377,8 @@ __global__ void twobody_matrix_element_dispatcher(
     double* H,
     const uint64_t* dev_basis_states,
     const uint32_t m_dim,
-    const size_t n_orbitals
+    const size_t n_orbitals,
+    const size_t n_indices
 )
 {
     const size_t col_idx = blockIdx.x*blockDim.x + threadIdx.x;
@@ -322,6 +393,7 @@ __global__ void twobody_matrix_element_dispatcher(
         
         H[idx] = calculate_twobody_matrix_element(
             n_orbitals,
+            n_indices,
             left_state,
             right_state
         );
@@ -334,12 +406,15 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
     dev_init(interaction, indices, dev_basis_states);
     const size_t m_dim = interaction.basis_states.size();
     const size_t n_orbitals = interaction.model_space.n_orbitals;
+    const size_t n_indices = indices.creation_orb_indices_0.size();
     static __device__ double* dev_H_diag = nullptr;
     double* H_diag_tmp = new double[m_dim];
     
     auto start = timer();
-        const size_t threads_per_block_onebody = 2;
+        const size_t threads_per_block_onebody = 256;
         const size_t blocks_per_grid_onebody = (m_dim + threads_per_block_onebody - 1)/threads_per_block_onebody;
+        cout << "[DEVICE_INFO] threads_per_block_onebody: " << threads_per_block_onebody << endl;
+        cout << "[DEVICE_INFO] blocks_per_grid_onebody: " << blocks_per_grid_onebody << endl;
         
         hip_wrappers::hipMalloc(&dev_H_diag, m_dim*sizeof(double));
         
@@ -355,19 +430,22 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
         const size_t block_dim = 16;
         const dim3 threads_per_block_twobody(block_dim, block_dim);
         const dim3 blocks_per_grid_twobody(ceil(m_dim/((double)block_dim)), ceil(m_dim/((double)block_dim)));
+        cout << "[DEVICE_INFO] threads_per_block_twobody: (" << threads_per_block_twobody.x << ", " << threads_per_block_twobody.y << ")" << endl;
+        cout << "[DEVICE_INFO] blocks_per_grid_twobody: (" << blocks_per_grid_twobody.x << ", " << blocks_per_grid_twobody.y << ")" << endl;
 
         hipLaunchKernelGGL(
             twobody_matrix_element_dispatcher, blocks_per_grid_twobody, threads_per_block_twobody, 0, 0,
             dev_H_diag,
             dev_basis_states,
             m_dim,
-            n_orbitals
+            n_orbitals,
+            n_indices
         );
         hip_wrappers::hipDeviceSynchronize();
 
         hip_wrappers::hipMemcpy(H_diag_tmp, dev_H_diag, m_dim*sizeof(double), hipMemcpyDeviceToHost);
         hip_wrappers::hipFree(dev_H_diag);
-    timer(start, "[DEVICE] one-body calc, alloc, copy, and free time");
+    timer(start, "[DEVICE_INFO] one-body calc, alloc, copy, and free time");
 
     for (size_t diag_idx = 0; diag_idx < m_dim; diag_idx++) H[diag_idx*m_dim + diag_idx] = H_diag_tmp[diag_idx]; // Copy data to the diagonal of H.
     delete[] H_diag_tmp;
