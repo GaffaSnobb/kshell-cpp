@@ -195,6 +195,16 @@ struct Indices
     const std::vector<int16_t> m_coupled;
     const std::vector<double> tbme;
 
+    const std::vector<uint16_t> annihilation_comp_m_start_idx_0;
+    const std::vector<uint16_t> annihilation_comp_m_end_idx_0;
+    const std::vector<uint16_t> annihilation_comp_m_start_idx_1;
+    const std::vector<uint16_t> annihilation_comp_m_end_idx_1;
+
+    const std::vector<uint16_t> creation_comp_m_start_idx_0;
+    const std::vector<uint16_t> creation_comp_m_end_idx_0;
+    const std::vector<uint16_t> creation_comp_m_start_idx_1;
+    const std::vector<uint16_t> creation_comp_m_end_idx_1;
+
     Indices(
         std::vector<int16_t> composite_m_idx_to_m_map_,
         std::vector<uint16_t> orbital_idx_to_j_map_,
@@ -206,7 +216,15 @@ struct Indices
         std::vector<uint16_t> annihilation_orb_indices_1_,
         std::vector<uint16_t> j_coupled_,
         std::vector<int16_t> m_coupled_,
-        std::vector<double> tbme_
+        std::vector<double> tbme_,
+        std::vector<uint16_t> annihilation_comp_m_start_idx_0_,
+        std::vector<uint16_t> annihilation_comp_m_end_idx_0_,
+        std::vector<uint16_t> annihilation_comp_m_start_idx_1_,
+        std::vector<uint16_t> annihilation_comp_m_end_idx_1_,
+        std::vector<uint16_t> creation_comp_m_start_idx_0_,
+        std::vector<uint16_t> creation_comp_m_end_idx_0_,
+        std::vector<uint16_t> creation_comp_m_start_idx_1_,
+        std::vector<uint16_t> creation_comp_m_end_idx_1_
     ) :
     composite_m_idx_to_m_map(composite_m_idx_to_m_map_),
     orbital_idx_to_j_map(orbital_idx_to_j_map_),
@@ -218,7 +236,15 @@ struct Indices
     annihilation_orb_indices_1(annihilation_orb_indices_1_),
     j_coupled(j_coupled_),
     m_coupled(m_coupled_),
-    tbme(tbme_) {}
+    tbme(tbme_),
+    annihilation_comp_m_start_idx_0(annihilation_comp_m_start_idx_0_),
+    annihilation_comp_m_end_idx_0(annihilation_comp_m_end_idx_0_),
+    annihilation_comp_m_start_idx_1(annihilation_comp_m_start_idx_1_),
+    annihilation_comp_m_end_idx_1(annihilation_comp_m_end_idx_1_),
+    creation_comp_m_start_idx_0(creation_comp_m_start_idx_0_),
+    creation_comp_m_end_idx_0(creation_comp_m_end_idx_0_),
+    creation_comp_m_start_idx_1(creation_comp_m_start_idx_1_),
+    creation_comp_m_end_idx_1(creation_comp_m_end_idx_1_) {}
 
     ~Indices()
     {
