@@ -56,6 +56,16 @@ const Indices generate_indices(const Interaction& interaction)
     std::vector<int16_t> m_coupled_list;
     std::vector<double> tbme_list;
 
+    std::vector<uint16_t> annihilation_comp_m_start_idx_0;
+    std::vector<uint16_t> annihilation_comp_m_end_idx_0;
+    std::vector<uint16_t> annihilation_comp_m_start_idx_1;
+    std::vector<uint16_t> annihilation_comp_m_end_idx_1;
+
+    std::vector<uint16_t> creation_comp_m_start_idx_0;
+    std::vector<uint16_t> creation_comp_m_end_idx_0;
+    std::vector<uint16_t> creation_comp_m_start_idx_1;
+    std::vector<uint16_t> creation_comp_m_end_idx_1;
+
     for (uint16_t creation_orb_idx_0 = 0; creation_orb_idx_0 < interaction.model_space.orbitals.size(); creation_orb_idx_0++)
     {
         for (uint16_t creation_orb_idx_1 = creation_orb_idx_0; creation_orb_idx_1 < interaction.model_space.orbitals.size(); creation_orb_idx_1++)
@@ -126,6 +136,16 @@ const Indices generate_indices(const Interaction& interaction)
                             j_coupled_list.push_back(j_coupled);
                             m_coupled_list.push_back(m_coupled);
                             tbme_list.push_back(tbme_tmp);
+
+                            annihilation_comp_m_start_idx_0.push_back(orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0][0]);
+                            annihilation_comp_m_end_idx_0.push_back(orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_0].back() + 1);
+                            annihilation_comp_m_start_idx_1.push_back(orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1][0]);
+                            annihilation_comp_m_end_idx_1.push_back(orbital_idx_to_composite_m_idx_map[annihilation_orb_idx_1].back() + 1);
+
+                            creation_comp_m_start_idx_0.push_back(orbital_idx_to_composite_m_idx_map[creation_orb_idx_0][0]);
+                            creation_comp_m_end_idx_0.push_back(orbital_idx_to_composite_m_idx_map[creation_orb_idx_0].back() + 1);
+                            creation_comp_m_start_idx_1.push_back(orbital_idx_to_composite_m_idx_map[creation_orb_idx_1][0]);
+                            creation_comp_m_end_idx_1.push_back(orbital_idx_to_composite_m_idx_map[creation_orb_idx_1].back() + 1);
                         }
                     }
                 }
@@ -133,7 +153,7 @@ const Indices generate_indices(const Interaction& interaction)
         }
     }
     const Indices indices(
-        interaction.model_space.all_jz_values,
+        interaction.model_space.all_jz_values,  // composite_m_idx_to_m_map
         orbital_idx_to_j_map,
         orbital_idx_to_composite_m_idx_map,
         orbital_idx_to_composite_m_idx_map_flattened_indices,
@@ -143,7 +163,15 @@ const Indices generate_indices(const Interaction& interaction)
         annihilation_orb_indices_1,
         j_coupled_list,
         m_coupled_list,
-        tbme_list
+        tbme_list,
+        annihilation_comp_m_start_idx_0,
+        annihilation_comp_m_end_idx_0,
+        annihilation_comp_m_start_idx_1,
+        annihilation_comp_m_end_idx_1,
+        creation_comp_m_start_idx_0,
+        creation_comp_m_end_idx_0,
+        creation_comp_m_start_idx_1,
+        creation_comp_m_end_idx_1
     );
     timer(start, "generate_indices");
     return indices;
