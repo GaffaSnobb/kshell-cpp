@@ -32,7 +32,16 @@ void hipFree(void* ptr)
     if (result != hipSuccess)
     {
         throw std::runtime_error(hipGetErrorString(result));
-    }    
+    }
+}
+
+void hipMemset(void *dst, int value, size_t sizeBytes)
+{
+    hipError_t result = ::hipMemset(dst, value, sizeBytes);
+    if (result != hipSuccess)
+    {
+        throw std::runtime_error(hipGetErrorString(result));
+    }
 }
 
 } // namespace hip_wrappers
