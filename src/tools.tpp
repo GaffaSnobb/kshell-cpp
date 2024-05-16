@@ -123,6 +123,23 @@ bool compare_arrays_upper_triangle(T1* arr1, vector<T2> arr2, T3 size)
     return true;
 }
 
+template <typename T1, typename T2>
+bool compare_arrays_upper_triangle(T1* arr1, T1* arr2, T2 size)
+{
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
+    {
+        for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+        {
+            size_t flat_idx = row_idx*size + col_idx;
+            if (std::abs(arr1[flat_idx] - arr2[flat_idx]) > 1e-13)
+            {   
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 template <typename T>
 void print_bit_representation(const T& value)
 {

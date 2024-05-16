@@ -44,6 +44,9 @@ bool compare_arrays(T1* arr1, T2* arr2, T3 size);
 template <typename T1, typename T2, typename T3>
 bool compare_arrays_upper_triangle(T1* arr1, vector<T2> arr2, T3 size);
 
+template <typename T1, typename T2>
+bool compare_arrays_upper_triangle(T1* arr1, T1* arr2, T2 size);
+
 template <typename T>
 void print_bit_representation(const T& value);
 
