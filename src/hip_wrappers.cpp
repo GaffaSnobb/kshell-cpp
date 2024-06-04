@@ -44,4 +44,13 @@ void hipMemset(void *dst, int value, size_t sizeBytes)
     }
 }
 
+void hipGetLastError()
+{
+    hipError_t result = ::hipGetLastError();
+    if (result != hipSuccess)
+    {
+        throw std::runtime_error(hipGetErrorString(result));
+    }
+}
+
 } // namespace hip_wrappers

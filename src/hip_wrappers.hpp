@@ -11,6 +11,7 @@ void hipMemcpy(void* dst, const void* src, size_t sizeBytes, hipMemcpyKind kind)
 void hipDeviceSynchronize();
 void hipFree(void* ptr);
 void hipMemset(void *dst, int value, size_t sizeBytes);
+void hipGetLastError();
 
 template <typename T>
 void hipMalloc(T** devPtr, size_t size);
