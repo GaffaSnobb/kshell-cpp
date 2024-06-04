@@ -29,7 +29,7 @@ bool compare_with_ref_matrix(double* arr, string ref_name, size_t size)
     matrix which was used to genereate the ref. matrix files, the
     differences are as high as 1e-5.
     */
-    const double tol = 1e-2;
+    const double tol = 1e-3;
 
     if (ref_name == "p0n1")
     {
@@ -133,6 +133,21 @@ bool compare_with_ref_matrix(double* arr, string ref_name, size_t size)
             {
                 size_t flat_idx = row_idx*size + col_idx;
                 if (std::abs(arr[flat_idx] - ref_matrices::p2n1[row_idx][col_idx]) > tol)
+                {   
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    else if (ref_name == "p2n2")
+    {
+        for (size_t row_idx = 0; row_idx < size; row_idx++)
+        {
+            for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+            {
+                size_t flat_idx = row_idx*size + col_idx;
+                if (std::abs(arr[flat_idx] - ref_matrices::p2n2[row_idx][col_idx]) > tol)
                 {   
                     return false;
                 }
