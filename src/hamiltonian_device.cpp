@@ -23,6 +23,9 @@ units. `extern` just makes the entire compilation crash, and if I
 declare the arrays in a header, values I put into them do not persist
 across translation units.
 */
+
+bool is_show_dev_const_mem_usage = true;    // For making sure that the info is only displayed once per program execution.
+
 __constant__ uint16_t dev_const_creation_orb_indices_0[CONST_MEM_ARR_LEN_INDICES];
 __constant__ uint16_t dev_const_creation_orb_indices_1[CONST_MEM_ARR_LEN_INDICES];
 __constant__ uint16_t dev_const_annihilation_orb_indices_0[CONST_MEM_ARR_LEN_INDICES];
@@ -47,12 +50,15 @@ __constant__ uint16_t dev_const_orbital_idx_to_j_map[CONST_MEM_ARR_LEN_N_ORBITAL
 __host__ void dev_init(
     const Interaction& interaction,
     const Indices& indices,
-    uint64_t*& dev_basis_states
+    uint64_t*& dev_basis_states,
+    double*& dev_H,
+    double*& dev_H_diag
 )
 {
     /*
-    Add shit to constant memory.
+    Add shit to device memory.
     */
+    auto start = timer();
     hipDeviceProp_t prop;
     const size_t device_id = 0;
     HIP_ASSERT(hipGetDeviceProperties(&prop, device_id));
@@ -133,41 +139,53 @@ __host__ void dev_init(
     hip_wrappers::hipMemcpyToSymbol(dev_const_composite_m_idx_to_m_map, indices.composite_m_idx_to_m_map);
     hip_wrappers::hipMemcpyToSymbol(dev_const_orbital_idx_to_j_map, indices.orbital_idx_to_j_map);
     
-    cout << diagnostics::DIAG_STR_START << endl;
-    cout << coi_0/1e3 << " kB" << " (" << indices.creation_orb_indices_0.size() << " elements)" << endl;
-    cout << coi_1/1e3 << " kB" << " (" << indices.creation_orb_indices_1.size() << " elements)" << endl;
-    cout << aoi_0/1e3 << " kB" << " (" << indices.annihilation_orb_indices_0.size() << " elements)" << endl;
-    cout << aoi_1/1e3 << " kB" << " (" << indices.annihilation_orb_indices_1.size() << " elements)" << endl;
-    cout << jc/1e3 << " kB" << " (" << indices.j_coupled.size() << " elements)" << endl;
-    cout << mc/1e3 << " kB" << " (" << indices.m_coupled.size() << " elements)" << endl;
-    cout << oitcmimf/1e3 << " kB" << " (" << interaction.model_space.orbitals.size() << " elements)" << endl;
-    cout << tbme/1e3 << " kB" << " (" << indices.tbme.size() << " elements)" << endl;
-    cout << spe/1e3 << " kB" << " (" << interaction.spe.size() << " elements)" << endl;
-    cout << total/1e6 << " MB __constant__ mem used of " << prop.totalConstMem/1e6 << " MB total (" << total*100.0/prop.totalConstMem << "%)" << endl;
+    if (is_show_dev_const_mem_usage)
+    {
+        is_show_dev_const_mem_usage = false;
+        cout << diagnostics::DIAG_STR_START << endl;
+        cout << coi_0/1e3 << " kB" << " (" << indices.creation_orb_indices_0.size() << " elements)" << endl;
+        cout << coi_1/1e3 << " kB" << " (" << indices.creation_orb_indices_1.size() << " elements)" << endl;
+        cout << aoi_0/1e3 << " kB" << " (" << indices.annihilation_orb_indices_0.size() << " elements)" << endl;
+        cout << aoi_1/1e3 << " kB" << " (" << indices.annihilation_orb_indices_1.size() << " elements)" << endl;
+        cout << jc/1e3 << " kB" << " (" << indices.j_coupled.size() << " elements)" << endl;
+        cout << mc/1e3 << " kB" << " (" << indices.m_coupled.size() << " elements)" << endl;
+        cout << oitcmimf/1e3 << " kB" << " (" << interaction.model_space.orbitals.size() << " elements)" << endl;
+        cout << tbme/1e3 << " kB" << " (" << indices.tbme.size() << " elements)" << endl;
+        cout << spe/1e3 << " kB" << " (" << interaction.spe.size() << " elements)" << endl;
+        cout << total/1e6 << " MB __constant__ mem used of " << prop.totalConstMem/1e6 << " MB total (" << total*100.0/prop.totalConstMem << "%)" << endl;
 
-    cout << acmsi_0/1e3 << " kB" << " (" << indices.annihilation_comp_m_start_idx_0.size() << " elements)" << endl;
-    cout << acmei_0/1e3 << " kB" << " (" << indices.annihilation_comp_m_end_idx_0.size() << " elements)" << endl;
-    cout << acmsi_1/1e3 << " kB" << " (" << indices.annihilation_comp_m_start_idx_1.size() << " elements)" << endl;
-    cout << acmei_1/1e3 << " kB" << " (" << indices.annihilation_comp_m_end_idx_1.size() << " elements)" << endl;
-    cout << ccmsi_0/1e3 << " kB" << " (" << indices.creation_comp_m_start_idx_0.size() << " elements)" << endl;
-    cout << ccmei_0/1e3 << " kB" << " (" << indices.creation_comp_m_end_idx_0.size() << " elements)" << endl;
-    cout << ccmsi_1/1e3 << " kB" << " (" << indices.creation_comp_m_start_idx_1.size() << " elements)" << endl;
-    cout << ccmei_1/1e3 << " kB" << " (" << indices.creation_comp_m_end_idx_1.size() << " elements)" << endl;
-    cout << cmitmm/1e3 << " kB" << " (" << indices.composite_m_idx_to_m_map.size() << " elements)" << endl;
-    cout << oitjm/1e3 << " kB" << " (" << indices.orbital_idx_to_j_map.size() << " elements)" << endl;
+        cout << acmsi_0/1e3 << " kB" << " (" << indices.annihilation_comp_m_start_idx_0.size() << " elements)" << endl;
+        cout << acmei_0/1e3 << " kB" << " (" << indices.annihilation_comp_m_end_idx_0.size() << " elements)" << endl;
+        cout << acmsi_1/1e3 << " kB" << " (" << indices.annihilation_comp_m_start_idx_1.size() << " elements)" << endl;
+        cout << acmei_1/1e3 << " kB" << " (" << indices.annihilation_comp_m_end_idx_1.size() << " elements)" << endl;
+        cout << ccmsi_0/1e3 << " kB" << " (" << indices.creation_comp_m_start_idx_0.size() << " elements)" << endl;
+        cout << ccmei_0/1e3 << " kB" << " (" << indices.creation_comp_m_end_idx_0.size() << " elements)" << endl;
+        cout << ccmsi_1/1e3 << " kB" << " (" << indices.creation_comp_m_start_idx_1.size() << " elements)" << endl;
+        cout << ccmei_1/1e3 << " kB" << " (" << indices.creation_comp_m_end_idx_1.size() << " elements)" << endl;
+        cout << cmitmm/1e3 << " kB" << " (" << indices.composite_m_idx_to_m_map.size() << " elements)" << endl;
+        cout << oitjm/1e3 << " kB" << " (" << indices.orbital_idx_to_j_map.size() << " elements)" << endl;
+        cout << diagnostics::DIAG_STR_END << endl;
+    }
 
-    cout << diagnostics::DIAG_STR_END << endl;
-
-    diagnostics::print_gpu_diagnostics(interaction, indices);
     
     // Device arrays.
     hip_wrappers::hipMalloc(&dev_basis_states, m_dim*sizeof(uint64_t));
     hip_wrappers::hipMemcpy(dev_basis_states, interaction.basis_states.data(), m_dim*sizeof(uint64_t), hipMemcpyHostToDevice);
+
+    hip_wrappers::hipMalloc(&dev_H, m_dim*m_dim*sizeof(double));
+    hip_wrappers::hipMemset(dev_H, 0, m_dim*m_dim*sizeof(double));
+
+    hip_wrappers::hipMalloc(&dev_H_diag, m_dim*sizeof(double));
+    hip_wrappers::hipMemset(dev_H_diag, 0, m_dim*sizeof(double));
+
+    timer(start, "[DEVICE_INFO] dev_init time");
 }
 
-__host__ void dev_uninit(uint64_t*& dev_basis_states)
+__host__ void dev_uninit(uint64_t*& dev_basis_states, double*& dev_H, double*& dev_H_diag)
 {
     hip_wrappers::hipFree(dev_basis_states);
+    hip_wrappers::hipFree(dev_H);
+    hip_wrappers::hipFree(dev_H_diag);
 }
 
 namespace hamiltonian_device
@@ -374,6 +392,7 @@ __device__ double calculate_twobody_matrix_element(
 }
 
 __global__ void twobody_matrix_element_dispatcher(
+    double* H_diag,
     double* H,
     const uint64_t* dev_basis_states,
     const uint32_t m_dim,
@@ -397,18 +416,26 @@ __global__ void twobody_matrix_element_dispatcher(
             left_state,
             right_state
         );
+
+        if (col_idx == row_idx)
+        {   
+            /*
+            Add one-body results. They are located only on the diagonal.
+            */
+            H[idx] += H_diag[col_idx];  // Or row_idx.
+        }
     }
 }
 
 void create_hamiltonian_device_dispatcher(const Interaction& interaction, const Indices& indices, double* H)
 {
     static __device__ uint64_t* dev_basis_states = nullptr;
-    dev_init(interaction, indices, dev_basis_states);
+    static __device__ double* dev_H = nullptr;
+    static __device__ double* dev_H_diag = nullptr;
+    dev_init(interaction, indices, dev_basis_states, dev_H, dev_H_diag);
     const size_t m_dim = interaction.basis_states.size();
     const size_t n_orbitals = interaction.model_space.n_orbitals;
     const size_t n_indices = indices.creation_orb_indices_0.size();
-    static __device__ double* dev_H_diag = nullptr;
-    double* H_diag_tmp = new double[m_dim];
     
     auto start = timer();
         const size_t threads_per_block_onebody = 256;
@@ -416,7 +443,7 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
         cout << "[DEVICE_INFO] threads_per_block_onebody: " << threads_per_block_onebody << endl;
         cout << "[DEVICE_INFO] blocks_per_grid_onebody: " << blocks_per_grid_onebody << endl;
         
-        hip_wrappers::hipMalloc(&dev_H_diag, m_dim*sizeof(double));
+        // hip_wrappers::hipMalloc(&dev_H_diag, m_dim*sizeof(double));
         
         hipLaunchKernelGGL(
             onebody_matrix_element_dispatcher, dim3(blocks_per_grid_onebody), dim3(threads_per_block_onebody), 0, 0,
@@ -425,9 +452,13 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
             m_dim,
             n_orbitals
         );
+        hip_wrappers::hipGetLastError();
         hip_wrappers::hipDeviceSynchronize();
 
-        const size_t block_dim = 16;
+        // const size_t block_dim = 4;
+        const size_t block_dim = 8; // In 3p 3n and 3p 4n tests, 8 was fastest.
+        // const size_t block_dim = 16;
+        // const size_t block_dim = 32;
         const dim3 threads_per_block_twobody(block_dim, block_dim);
         const dim3 blocks_per_grid_twobody(ceil(m_dim/((double)block_dim)), ceil(m_dim/((double)block_dim)));
         cout << "[DEVICE_INFO] threads_per_block_twobody: (" << threads_per_block_twobody.x << ", " << threads_per_block_twobody.y << ")" << endl;
@@ -436,19 +467,19 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
         hipLaunchKernelGGL(
             twobody_matrix_element_dispatcher, blocks_per_grid_twobody, threads_per_block_twobody, 0, 0,
             dev_H_diag,
+            dev_H,
             dev_basis_states,
             m_dim,
             n_orbitals,
             n_indices
         );
+        hip_wrappers::hipGetLastError();
         hip_wrappers::hipDeviceSynchronize();
 
-        hip_wrappers::hipMemcpy(H_diag_tmp, dev_H_diag, m_dim*sizeof(double), hipMemcpyDeviceToHost);
-        hip_wrappers::hipFree(dev_H_diag);
+        hip_wrappers::hipMemcpy(H, dev_H, m_dim*m_dim*sizeof(double), hipMemcpyDeviceToHost);
     timer(start, "[DEVICE_INFO] one-body calc, alloc, copy, and free time");
 
-    for (size_t diag_idx = 0; diag_idx < m_dim; diag_idx++) H[diag_idx*m_dim + diag_idx] = H_diag_tmp[diag_idx]; // Copy data to the diagonal of H.
-    delete[] H_diag_tmp;
-    dev_uninit(dev_basis_states);
+    // for (size_t diag_idx = 0; diag_idx < m_dim; diag_idx++) H[diag_idx*m_dim + diag_idx] = H_diag_tmp[diag_idx]; // Copy data to the diagonal of H.
+    dev_uninit(dev_basis_states, dev_H, dev_H_diag);
 }
 }
