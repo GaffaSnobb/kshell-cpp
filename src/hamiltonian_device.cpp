@@ -52,7 +52,8 @@ __host__ void dev_init(
     const Indices& indices,
     uint64_t*& dev_basis_states,
     double*& dev_H,
-    double*& dev_H_diag
+    double*& dev_H_diag,
+    double*& dev_H_upper_triangle
 )
 {
     /*
@@ -178,14 +179,20 @@ __host__ void dev_init(
     hip_wrappers::hipMalloc(&dev_H_diag, m_dim*sizeof(double));
     hip_wrappers::hipMemset(dev_H_diag, 0, m_dim*sizeof(double));
 
+    const size_t n_elements_upper_triangle = m_dim*(m_dim + 1)/2;
+
+    hip_wrappers::hipMalloc(&dev_H_upper_triangle, n_elements_upper_triangle*sizeof(double));
+    hip_wrappers::hipMemset(dev_H_upper_triangle, 0, n_elements_upper_triangle*sizeof(double));
+
     timer(start, "[DEVICE_INFO] dev_init time");
 }
 
-__host__ void dev_uninit(uint64_t*& dev_basis_states, double*& dev_H, double*& dev_H_diag)
+__host__ void dev_uninit(uint64_t*& dev_basis_states, double*& dev_H, double*& dev_H_diag, double*& dev_H_upper_triangle)
 {
     hip_wrappers::hipFree(dev_basis_states);
     hip_wrappers::hipFree(dev_H);
     hip_wrappers::hipFree(dev_H_diag);
+    hip_wrappers::hipFree(dev_H_upper_triangle);
 }
 
 namespace hamiltonian_device
@@ -391,6 +398,43 @@ __device__ double calculate_twobody_matrix_element(
     return twobody_res;
 }
 
+__device__ inline void flat_tri_idx_to_2d_indices_ascending(const size_t n_rows, const size_t flat_tri_idx, size_t &row_idx, size_t &col_idx)
+{   /*
+    Find the row, col indices of the original matrix from the flat index
+    of the upper triangle (with diagonal). Search for row in ascending
+    order. Heres the Python code for the descending version:
+
+def flat_tri_idx_to_2d_indices_descending(n, flat_tri_idx):
+    """
+    Find the row, col indices of the original matrix from the flat index
+    of the upper triangle (with diagonal). Search for row in descending
+    order.
+    """
+    cum_n_triangular_elements = n*(n + 1)//2
+    for row_idx in reversed(range(n)):
+        
+        n_triangular_elements_row = n - row_idx
+        cum_n_triangular_elements -= n_triangular_elements_row    # Cumulative number of triangular elements at row `row_idx`.
+
+        if flat_tri_idx >= cum_n_triangular_elements:
+            cum_n_triangular_elements += n_triangular_elements_row
+            break
+
+    col_idx = n - (cum_n_triangular_elements - flat_tri_idx)
+    return row_idx, col_idx
+    */
+    size_t cum_n_triangular_elements = 0;
+    for (row_idx = 0; row_idx < n_rows; row_idx++)
+    {
+        const size_t n_triangular_elements_row = n_rows - row_idx;
+        cum_n_triangular_elements += n_triangular_elements_row;  // Cumulative number of triangular elements at row `row_idx`.
+
+        if (flat_tri_idx < cum_n_triangular_elements) break;
+
+    }
+    col_idx = n_rows - (cum_n_triangular_elements - flat_tri_idx);
+}
+
 __global__ void twobody_matrix_element_dispatcher(
     double* H_diag,
     double* H,
@@ -403,7 +447,6 @@ __global__ void twobody_matrix_element_dispatcher(
     const size_t col_idx = blockIdx.x*blockDim.x + threadIdx.x;
     const size_t row_idx = blockIdx.y*blockDim.y + threadIdx.y;
     const size_t idx = row_idx*m_dim + col_idx;
-    // printf("(r, c): (%zu, %zu)\n", row_idx, col_idx);
 
     if ((col_idx < m_dim) and (row_idx < m_dim))
     {
@@ -427,23 +470,68 @@ __global__ void twobody_matrix_element_dispatcher(
     }
 }
 
+__global__ void twobody_matrix_element_dispatcher_upper_triangle(
+    double* H_diag,
+    double* H_upper_triangle,
+    const uint64_t* dev_basis_states,
+    const uint32_t m_dim,
+    const size_t n_orbitals,
+    const size_t n_indices
+)
+{
+    const size_t n_elements_upper_triangle = m_dim*(m_dim + 1)/2;
+    const size_t idx = blockIdx.x*blockDim.x + threadIdx.x;
+    // const size_t col_idx = blockIdx.x*blockDim.x + threadIdx.x;
+    // const size_t row_idx = blockIdx.y*blockDim.y + threadIdx.y;
+    // const size_t idx = row_idx*m_dim + col_idx;
+    // printf("(r, c): (%zu, %zu)\n", row_idx, col_idx);
+
+    if (idx < n_elements_upper_triangle)
+    {
+        size_t row_idx;
+        size_t col_idx;
+
+        flat_tri_idx_to_2d_indices_ascending(m_dim, idx, row_idx, col_idx);
+
+        const uint64_t left_state = dev_basis_states[row_idx];
+        const uint64_t right_state = dev_basis_states[col_idx];
+        
+        H_upper_triangle[idx] = calculate_twobody_matrix_element(
+            n_orbitals,
+            n_indices,
+            left_state,
+            right_state
+        );
+
+        if (col_idx == row_idx)
+        {   
+            /*
+            Add one-body results. They are located only on the diagonal.
+            */
+            H_upper_triangle[idx] += H_diag[col_idx];  // Or row_idx.
+        }
+    }
+}
+
 void create_hamiltonian_device_dispatcher(const Interaction& interaction, const Indices& indices, double* H)
 {
     static __device__ uint64_t* dev_basis_states = nullptr;
+    static __device__ double* dev_H_upper_triangle = nullptr;
     static __device__ double* dev_H = nullptr;
     static __device__ double* dev_H_diag = nullptr;
-    dev_init(interaction, indices, dev_basis_states, dev_H, dev_H_diag);
+    dev_init(interaction, indices, dev_basis_states, dev_H, dev_H_diag, dev_H_upper_triangle);
     const size_t m_dim = interaction.basis_states.size();
     const size_t n_orbitals = interaction.model_space.n_orbitals;
     const size_t n_indices = indices.creation_orb_indices_0.size();
+    const size_t n_elements_upper_triangle = m_dim*(m_dim + 1)/2;
+
+    double* H_upper_triangle = new double[n_elements_upper_triangle];
     
     auto start = timer();
         const size_t threads_per_block_onebody = 256;
         const size_t blocks_per_grid_onebody = (m_dim + threads_per_block_onebody - 1)/threads_per_block_onebody;
         cout << "[DEVICE_INFO] threads_per_block_onebody: " << threads_per_block_onebody << endl;
         cout << "[DEVICE_INFO] blocks_per_grid_onebody: " << blocks_per_grid_onebody << endl;
-        
-        // hip_wrappers::hipMalloc(&dev_H_diag, m_dim*sizeof(double));
         
         hipLaunchKernelGGL(
             onebody_matrix_element_dispatcher, dim3(blocks_per_grid_onebody), dim3(threads_per_block_onebody), 0, 0,
@@ -456,18 +544,31 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
         hip_wrappers::hipDeviceSynchronize();
 
         // const size_t block_dim = 4;
-        const size_t block_dim = 8; // In 3p 3n and 3p 4n tests, 8 was fastest.
-        // const size_t block_dim = 16;
-        // const size_t block_dim = 32;
-        const dim3 threads_per_block_twobody(block_dim, block_dim);
-        const dim3 blocks_per_grid_twobody(ceil(m_dim/((double)block_dim)), ceil(m_dim/((double)block_dim)));
-        cout << "[DEVICE_INFO] threads_per_block_twobody: (" << threads_per_block_twobody.x << ", " << threads_per_block_twobody.y << ")" << endl;
-        cout << "[DEVICE_INFO] blocks_per_grid_twobody: (" << blocks_per_grid_twobody.x << ", " << blocks_per_grid_twobody.y << ")" << endl;
+        // const size_t block_dim = 8; // In 3p 3n and 3p 4n tests, 8 was fastest.
+        // // const size_t block_dim = 16;
+        // // const size_t block_dim = 32;
+
+        // const size_t n_elements_upper_triangle = m_dim*(m_dim + 1)/2;
+        // const dim3 threads_per_block_twobody(block_dim, block_dim);
+        // const dim3 blocks_per_grid_twobody(ceil(m_dim/((double)block_dim)), ceil(m_dim/((double)block_dim)));
+        // cout << "[DEVICE_INFO] threads_per_block_twobody: (" << threads_per_block_twobody.x << ", " << threads_per_block_twobody.y << ")" << endl;
+        // cout << "[DEVICE_INFO] blocks_per_grid_twobody: (" << blocks_per_grid_twobody.x << ", " << blocks_per_grid_twobody.y << ")" << endl;
+        // cout << "m_dim: " << m_dim << endl;
+        // cout << "m_dim*m_dim: " << m_dim*m_dim << endl;
+        // cout << blocks_per_grid_twobody.x*blocks_per_grid_twobody.y*threads_per_block_twobody.x*threads_per_block_twobody.y << endl;
+        // cout << "n_elements_upper_triangle: " << n_elements_upper_triangle << endl;
+
+        const size_t threads_per_block_twobody = 64;
+        const size_t blocks_per_grid_twobody = (n_elements_upper_triangle + threads_per_block_twobody - 1)/threads_per_block_twobody;
+        cout << "\n[DEVICE_INFO] threads_per_block_twobody: " << threads_per_block_twobody << endl;
+        cout << "[DEVICE_INFO] blocks_per_grid_twobody: " << blocks_per_grid_twobody << endl;
+        cout << "[DEVICE_INFO] total threads: " << threads_per_block_twobody*blocks_per_grid_twobody << endl;
+        cout << "[DEVICE_INFO] n_elements_upper_triangle: " << n_elements_upper_triangle << endl;
 
         hipLaunchKernelGGL(
-            twobody_matrix_element_dispatcher, blocks_per_grid_twobody, threads_per_block_twobody, 0, 0,
+            twobody_matrix_element_dispatcher_upper_triangle, blocks_per_grid_twobody, threads_per_block_twobody, 0, 0,
             dev_H_diag,
-            dev_H,
+            dev_H_upper_triangle,
             dev_basis_states,
             m_dim,
             n_orbitals,
@@ -476,10 +577,53 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
         hip_wrappers::hipGetLastError();
         hip_wrappers::hipDeviceSynchronize();
 
-        hip_wrappers::hipMemcpy(H, dev_H, m_dim*m_dim*sizeof(double), hipMemcpyDeviceToHost);
+        hip_wrappers::hipMemcpy(H_upper_triangle, dev_H_upper_triangle, n_elements_upper_triangle*sizeof(double), hipMemcpyDeviceToHost);
+        dev_uninit(dev_basis_states, dev_H, dev_H_diag, dev_H_upper_triangle);
     timer(start, "[DEVICE_INFO] one-body calc, alloc, copy, and free time");
 
-    // for (size_t diag_idx = 0; diag_idx < m_dim; diag_idx++) H[diag_idx*m_dim + diag_idx] = H_diag_tmp[diag_idx]; // Copy data to the diagonal of H.
-    dev_uninit(dev_basis_states, dev_H, dev_H_diag);
+    size_t lim = m_dim;
+    size_t counter = 0;
+    size_t prev_offset = 0;
+    size_t row_idx = 0;
+
+    for (size_t flat_tri_idx = 0; flat_tri_idx < n_elements_upper_triangle; flat_tri_idx++)
+    {   /*
+        Convert an index from the flat upper triangle array into an
+        index of the flat H array. If the H array is
+
+            H = [[ 0  1  2  3]
+                 [ 4  5  6  7]
+                 [ 8  9 10 11]
+                 [12 13 14 15]]
+
+        the flat triangle array will be
+
+            tri = [0, 1, 2, 3, 5, 6, 7, 10, 11, 15]
+
+        tri[5] with value 6 corresponds to element H[1][2].
+        */
+        if (counter >= lim)
+        {   /*
+            Row 0 has lim number of upper triangular elements, row 1 has
+            lim - 1 elements, row 2 lim - 2, ...
+
+            The first triangular element of row 0 is offset by 0
+            The first triangular element of row 1 is offset by 0 + 1
+            The first triangular element of row 2 is offset by 0 + 1 + 2
+            ...
+            */
+            lim--;
+            counter = 0;
+            prev_offset = row_idx + prev_offset;
+        }
+
+        row_idx = m_dim - lim;
+        size_t flat_idx = flat_tri_idx + row_idx + prev_offset;
+        counter++;
+
+        H[flat_idx] = H_upper_triangle[flat_tri_idx];
+    }
+
+    delete[] H_upper_triangle;
 }
 }
