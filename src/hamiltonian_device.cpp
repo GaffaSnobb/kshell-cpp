@@ -51,7 +51,6 @@ __host__ void dev_init(
     const Interaction& interaction,
     const Indices& indices,
     uint64_t*& dev_basis_states,
-    double*& dev_H,
     double*& dev_H_diag,
     double*& dev_H_upper_triangle
 )
@@ -173,9 +172,6 @@ __host__ void dev_init(
     hip_wrappers::hipMalloc(&dev_basis_states, m_dim*sizeof(uint64_t));
     hip_wrappers::hipMemcpy(dev_basis_states, interaction.basis_states.data(), m_dim*sizeof(uint64_t), hipMemcpyHostToDevice);
 
-    hip_wrappers::hipMalloc(&dev_H, m_dim*m_dim*sizeof(double));
-    hip_wrappers::hipMemset(dev_H, 0, m_dim*m_dim*sizeof(double));
-
     hip_wrappers::hipMalloc(&dev_H_diag, m_dim*sizeof(double));
     hip_wrappers::hipMemset(dev_H_diag, 0, m_dim*sizeof(double));
 
@@ -187,10 +183,9 @@ __host__ void dev_init(
     timer(start, "[DEVICE_INFO] dev_init time");
 }
 
-__host__ void dev_uninit(uint64_t*& dev_basis_states, double*& dev_H, double*& dev_H_diag, double*& dev_H_upper_triangle)
+__host__ void dev_uninit(uint64_t*& dev_basis_states, double*& dev_H_diag, double*& dev_H_upper_triangle)
 {
     hip_wrappers::hipFree(dev_basis_states);
-    hip_wrappers::hipFree(dev_H);
     hip_wrappers::hipFree(dev_H_diag);
     hip_wrappers::hipFree(dev_H_upper_triangle);
 }
@@ -437,41 +432,6 @@ def flat_tri_idx_to_2d_indices_descending(n, flat_tri_idx):
 
 __global__ void twobody_matrix_element_dispatcher(
     double* H_diag,
-    double* H,
-    const uint64_t* dev_basis_states,
-    const uint32_t m_dim,
-    const size_t n_orbitals,
-    const size_t n_indices
-)
-{
-    const size_t col_idx = blockIdx.x*blockDim.x + threadIdx.x;
-    const size_t row_idx = blockIdx.y*blockDim.y + threadIdx.y;
-    const size_t idx = row_idx*m_dim + col_idx;
-
-    if ((col_idx < m_dim) and (row_idx < m_dim))
-    {
-        const uint64_t left_state = dev_basis_states[row_idx];
-        const uint64_t right_state = dev_basis_states[col_idx];
-        
-        H[idx] = calculate_twobody_matrix_element(
-            n_orbitals,
-            n_indices,
-            left_state,
-            right_state
-        );
-
-        if (col_idx == row_idx)
-        {   
-            /*
-            Add one-body results. They are located only on the diagonal.
-            */
-            H[idx] += H_diag[col_idx];  // Or row_idx.
-        }
-    }
-}
-
-__global__ void twobody_matrix_element_dispatcher_upper_triangle(
-    double* H_diag,
     double* H_upper_triangle,
     const uint64_t* dev_basis_states,
     const uint32_t m_dim,
@@ -512,9 +472,8 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
 {
     static __device__ uint64_t* dev_basis_states = nullptr;
     static __device__ double* dev_H_upper_triangle = nullptr;
-    static __device__ double* dev_H = nullptr;
     static __device__ double* dev_H_diag = nullptr;
-    dev_init(interaction, indices, dev_basis_states, dev_H, dev_H_diag, dev_H_upper_triangle);
+    dev_init(interaction, indices, dev_basis_states, dev_H_diag, dev_H_upper_triangle);
     const size_t m_dim = interaction.basis_states.size();
     const size_t n_orbitals = interaction.model_space.n_orbitals;
     const size_t n_indices = indices.creation_orb_indices_0.size();
@@ -538,25 +497,6 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
         hip_wrappers::hipGetLastError();
         hip_wrappers::hipDeviceSynchronize();
 
-        // const size_t block_dim = 8; // In 3p 3n and 3p 4n tests, 8 was fastest (use max 32, thats 1024 threads).
-        // const dim3 threads_per_block_twobody(block_dim, block_dim);
-        // const dim3 blocks_per_grid_twobody(ceil(m_dim/((double)block_dim)), ceil(m_dim/((double)block_dim)));
-        // cout << "[DEVICE_INFO] threads_per_block_twobody: (" << threads_per_block_twobody.x << ", " << threads_per_block_twobody.y << ")" << endl;
-        // cout << "[DEVICE_INFO] blocks_per_grid_twobody: (" << blocks_per_grid_twobody.x << ", " << blocks_per_grid_twobody.y << ")" << endl;
-
-        // hipLaunchKernelGGL(
-        //     twobody_matrix_element_dispatcher, blocks_per_grid_twobody, threads_per_block_twobody, 0, 0,
-        //     dev_H_diag,
-        //     dev_H,
-        //     dev_basis_states,
-        //     m_dim,
-        //     n_orbitals,
-        //     n_indices
-        // );
-        // hip_wrappers::hipGetLastError();
-        // hip_wrappers::hipDeviceSynchronize();
-        // hip_wrappers::hipMemcpy(H, dev_H, m_dim*m_dim*sizeof(double), hipMemcpyDeviceToHost);
-
         const size_t threads_per_block_twobody = 64;
         const size_t blocks_per_grid_twobody = (n_elements_upper_triangle + threads_per_block_twobody - 1)/threads_per_block_twobody;
         cout << "\n[DEVICE_INFO] threads_per_block_twobody: " << threads_per_block_twobody << endl;
@@ -565,7 +505,7 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
         cout << "[DEVICE_INFO] n_elements_upper_triangle: " << n_elements_upper_triangle << endl;
 
         hipLaunchKernelGGL(
-            twobody_matrix_element_dispatcher_upper_triangle, blocks_per_grid_twobody, threads_per_block_twobody, 0, 0,
+            twobody_matrix_element_dispatcher, blocks_per_grid_twobody, threads_per_block_twobody, 0, 0,
             dev_H_diag,
             dev_H_upper_triangle,
             dev_basis_states,
@@ -577,7 +517,7 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
         hip_wrappers::hipDeviceSynchronize();
         hip_wrappers::hipMemcpy(H_upper_triangle, dev_H_upper_triangle, n_elements_upper_triangle*sizeof(double), hipMemcpyDeviceToHost);
 
-        dev_uninit(dev_basis_states, dev_H, dev_H_diag, dev_H_upper_triangle);
+        dev_uninit(dev_basis_states, dev_H_diag, dev_H_upper_triangle);
     timer(start, "[DEVICE_INFO] one-body calc, alloc, copy, and free time");
 
     size_t lim = m_dim;
