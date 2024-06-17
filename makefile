@@ -5,7 +5,7 @@ PATHO = build/objs/
 
 CXX = hipcc
 EXEC = $(PATHB)run.out
-SRCS = $(addprefix $(PATHS), tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp generate_indices.cpp hamiltonian_bitset_representation.cpp hamiltonian_device.cpp diagnostics.cpp hip_wrappers.cpp)
+SRCS = $(addprefix $(PATHS), tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp generate_indices.cpp hamiltonian_bitset_representation.cpp hamiltonian_device.cpp diagnostics.cpp hip_wrappers.cpp lanczos.cpp)
 OBJS = $(addprefix $(PATHO), $(notdir $(SRCS:.cpp=.o)))
 DEPS = $(addprefix $(PATHD), $(notdir $(SRCS:.cpp=.d)))
 CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -Ofast# -Wno-unused-result
