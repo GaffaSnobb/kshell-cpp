@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <unordered_map>
-#include <stdint.h>
+#include <cstddef> // stdints
 
 struct Key5
 {

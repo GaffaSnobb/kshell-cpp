@@ -3,7 +3,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <cmath>
-#include <stdint.h>
+#include <cstddef> // stdints
 
 #include "tools.hpp"
 #include "data_structures.hpp"

@@ -4,7 +4,7 @@
 #include <bitset>
 #include <filesystem>
 #include <stdexcept>
-#include <stdint.h>
+#include <cstddef> // stdints
 
 #include "parameters.hpp"
 #include "tools.hpp"
