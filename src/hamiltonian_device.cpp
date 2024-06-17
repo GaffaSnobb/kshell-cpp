@@ -1,6 +1,6 @@
 #include <vector>
 #include <iostream>
-#include <stdint.h>
+#include <cstddef> // stdints
 #include <hip/hip_runtime.h>
 
 #include "hip_wrappers.hpp"
@@ -518,7 +518,7 @@ void create_hamiltonian_device_dispatcher(const Interaction& interaction, const 
         hip_wrappers::hipMemcpy(H_upper_triangle, dev_H_upper_triangle, n_elements_upper_triangle*sizeof(double), hipMemcpyDeviceToHost);
 
         dev_uninit(dev_basis_states, dev_H_diag, dev_H_upper_triangle);
-    timer(start, "[DEVICE_INFO] one-body calc, alloc, copy, and free time");
+    timer(start, "[DEVICE_INFO] H calc, alloc, copy, and free time");
 
     size_t lim = m_dim;
     size_t counter = 0;
