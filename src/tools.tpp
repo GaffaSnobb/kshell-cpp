@@ -27,6 +27,20 @@ void print_flattened_2d_array(const T1* arr, const T2 size)
 }
 
 template <typename T1, typename T2>
+void print_flattened_2d_array(const T1* arr, const T2 n_rows, const T2 n_cols)
+{
+    for (size_t row_idx = 0; row_idx < n_rows; row_idx++)
+    {
+        for (size_t col_idx = 0; col_idx < n_cols; col_idx++)
+        {
+            cout << std::setw(10) << arr[row_idx*n_cols + col_idx] << ", ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+template <typename T1, typename T2>
 void write_flattened_2d_array_to_file(T1* arr, const T2 size, const std::string& filename)
 {
     /*

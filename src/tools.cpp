@@ -341,3 +341,9 @@ void check_if_file_exists(const std::filesystem::path& path)
         throw std::runtime_error("The path is not a file: " + path.string());
     }
 }
+
+void input()
+{
+    string empty;
+    std::getline(std::cin, empty);
+}

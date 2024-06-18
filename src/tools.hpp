@@ -31,9 +31,13 @@ time_point<high_resolution_clock> timer();
 milliseconds timer(time_point<high_resolution_clock> start, string name);
 int64_t timer(time_point<high_resolution_clock> start);
 void check_if_file_exists(const std::filesystem::path& path);
+void input();
 
 template <typename T1, typename T2>
 void print_flattened_2d_array(const T1* arr, const T2 size);
+
+template <typename T1, typename T2>
+void print_flattened_2d_array(const T1* arr, const T2 n_rows, const T2 n_cols);
 
 template <typename T1, typename T2>
 void write_flattened_2d_array_to_file(const T1* arr, const T2 size, const string& filename);
