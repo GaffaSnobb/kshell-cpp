@@ -6,6 +6,8 @@
 
 #include "data_structures.hpp"
 #include "tools.hpp"
+#include "../external/eigen-3.4.0/Eigen/Dense"
+#include "../external/eigen-3.4.0/Eigen/Eigenvalues"
 
 using std::cout;
 using std::endl;
@@ -85,7 +87,7 @@ void lanczos(const Interaction &interaction, const double *H_lol)
 
     if (n_lanc_steps > m_dim) throw std::runtime_error("n_lanc_steps cannot be larger than m_dim!");
 
-    const double H[5*5] = {-2.65526241, -1.73658919,  1.05043732, -1.35836282, -0.60596862, -1.73658919, -1.04257302, -0.38122495,  0.67562902, -0.56439201, 1.05043732, -0.38122495,  3.95116467, -0.66926132,  0.58965748, -1.35836282,  0.67562902, -0.66926132, -0.28581319, -0.37952717, -0.60596862, -0.56439201,  0.58965748, -0.37952717, -1.22605036};
+    double H[5*5] = {-2.65526241, -1.73658919,  1.05043732, -1.35836282, -0.60596862, -1.73658919, -1.04257302, -0.38122495,  0.67562902, -0.56439201, 1.05043732, -0.38122495,  3.95116467, -0.66926132,  0.58965748, -1.35836282,  0.67562902, -0.66926132, -0.28581319, -0.37952717, -0.60596862, -0.56439201,  0.58965748, -0.37952717, -1.22605036};
     // const double H[3*2] = {1, 2, 3, 4, 5, 6};
     
     double H_krylov[m_dim*n_lanc_steps];     // Flat 2D array.
@@ -167,8 +169,18 @@ void lanczos(const Interaction &interaction, const double *H_lol)
         // print_flattened_2d_array(H_krylov, n_lanc_steps, m_dim);
     }
 
-    print_flattened_2d_array(H_krylov, n_lanc_steps, m_dim);
+    // print_flattened_2d_array(H_krylov, n_lanc_steps, m_dim);
     // print_flattened_2d_array(H, 2, 3);
+    printf("\n\n");
+    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> H_host_mapped(H_krylov, n_lanc_steps, m_dim);
+    // cout << H_host_mapped << endl;
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(H_host_mapped);
+    std::cout << "Eigenvalues:\n" << solver.eigenvalues() << std::endl;
+    printf("\n\n");
+    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> H_host_mapped_2(H, m_dim, m_dim);
+    // cout << H_host_mapped_2 << endl;
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver_2(H_host_mapped_2);
+    std::cout << "Eigenvalues:\n" << solver_2.eigenvalues() << std::endl;
 
 }
 } // namespace lanczos
