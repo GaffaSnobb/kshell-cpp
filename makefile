@@ -13,12 +13,12 @@ CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -Ofast# -Wno-unused-result
 CXXFLAGS_TEST = -std=c++20 -MMD -MP -Wall -fopenmp -O0
 # CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -O0 -g	# Debug flags.
 
-SRCS = $(addprefix $(PATHS), tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp generate_indices.cpp hamiltonian_bitset_representation.cpp hamiltonian_device.cpp diagnostics.cpp hip_wrappers.cpp lanczos.cpp)
+SRCS = $(addprefix $(PATHS), tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp generate_indices.cpp hamiltonian_bitset_representation.cpp hamiltonian_device.cpp diagnostics.cpp hip_wrappers.cpp lanczos.cpp linear_algebra.cpp)
 OBJS = $(addprefix $(PATHO), $(notdir $(SRCS:.cpp=.o)))
 DEPS = $(addprefix $(PATHD), $(notdir $(SRCS:.cpp=.d)))
 EXEC = $(PATHB)run.out
 
-SRCS_TEST = $(addprefix $(PATHS_TEST), tests.cpp hash_tests.cpp)
+SRCS_TEST = $(addprefix $(PATHS_TEST), tests.cpp hash_tests.cpp lanczos_tests.cpp)
 OBJS_TEST = $(addprefix $(PATHO_TEST), $(notdir $(SRCS_TEST:.cpp=.o)))
 DEPS_TEST = $(addprefix $(PATHD_TEST), $(notdir $(SRCS_TEST:.cpp=.d)))
 EXEC_TEST = $(PATHB)tests.out
