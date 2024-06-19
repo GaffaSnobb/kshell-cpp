@@ -1,8 +1,6 @@
 #ifndef LANCZOS_HPP
 #define LANCZOS_HPP
 
-#include <stdint.h>
-
 #include "data_structures.hpp"
 
 namespace lanczos

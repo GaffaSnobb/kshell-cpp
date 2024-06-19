@@ -1,11 +1,10 @@
 #include <iostream>
 #include <cstddef> // stdints
 #include <random>
-#include <cmath>
-#include <stdexcept>
 
 #include "data_structures.hpp"
 #include "tools.hpp"
+#include "linear_algebra.hpp"
 #include "../external/eigen-3.4.0/Eigen/Dense"
 #include "../external/eigen-3.4.0/Eigen/Eigenvalues"
 
@@ -14,48 +13,11 @@ using std::endl;
 
 namespace lanczos
 {
-void mat_vec_mul(
-    const double* mat,
-    const double* vec,
-    const size_t m_dim,
-    double* res
+void lanczos(
+    const Interaction &interaction,
+    const double *H_lol//,
+    // const size_t n_lanc_steps
 )
-{
-    for (size_t row_idx = 0; row_idx < m_dim; row_idx++)
-    {
-        res[row_idx] = 0;
-        for (size_t col_idx = 0; col_idx < m_dim; col_idx++)
-        {
-            res[row_idx] += mat[row_idx*m_dim + col_idx]*vec[col_idx];
-        }
-    }
-}
-
-double vec_vec_dot(const double *vec_0, const double *vec_1, const size_t size)
-{
-    double sum = 0;
-    for (size_t i = 0; i < size; i++) sum += vec_0[i]*vec_1[i];
-    return sum;
-}
-
-double vector_norm(const double *vec, const size_t size)
-{
-    double norm = 0;
-    for (size_t i = 0; i < size; i++) norm += vec[i]*vec[i];
-    norm = std::sqrt(norm);
-
-    return norm;
-}
-
-void normalise_vector(double *vec, const size_t size)
-{
-    const double norm = vector_norm(vec, size);
-    if (norm <= 0) throw std::runtime_error("Vector norm has to be larger than 0!");
-    for (size_t i = 0; i < size; i++) vec[i] /= norm;
-}
-
-// void lanczos(const Interaction interaction, double *H_from_device)
-void lanczos(const Interaction &interaction, const double *H_lol)
 {   /*
     m_dim = A.shape[0]
     Q = np.zeros((m_dim, num_steps + 1))
@@ -109,7 +71,7 @@ void lanczos(const Interaction &interaction, const double *H_lol)
 
     for (size_t i = 0; i < m_dim; i++) init_lanc_vec[i] = distribution(gen);
 
-    normalise_vector(init_lanc_vec, m_dim);
+    lalg::normalise_vector(init_lanc_vec, m_dim);
 
     for (size_t i = 0; i < m_dim; i++)
     // {   /*
@@ -133,8 +95,8 @@ void lanczos(const Interaction &interaction, const double *H_lol)
 
     // First step:
     current_lanc_vec = lanc_vecs + 0*m_dim;
-    mat_vec_mul(H, current_lanc_vec, m_dim, w);
-    alpha[0] = vec_vec_dot(current_lanc_vec, w, m_dim);
+    lalg::mat_vec_mul(H, current_lanc_vec, m_dim, w);
+    alpha[0] = lalg::vec_vec_dot(current_lanc_vec, w, m_dim);
     for (size_t i = 0; i < m_dim; i++) w[i] = w[i] - alpha[0]*current_lanc_vec[i];
     H_krylov[0*m_dim + 0] = alpha[0];   // On the diagonal of H_krylov.
 
@@ -151,21 +113,21 @@ void lanczos(const Interaction &interaction, const double *H_lol)
              [ 0,  0,  0, l4, d4]]
         */
         // input();
-        beta[lanc_step_idx] = std::sqrt(vec_vec_dot(w, w, m_dim));
+        beta[lanc_step_idx] = std::sqrt(lalg::vec_vec_dot(w, w, m_dim));
         // printf("%f, ", beta[lanc_step_idx]);
 
         current_lanc_vec = lanc_vecs + lanc_step_idx*m_dim;         // Picks the correct row in lanc_vecs.
         prev_lanc_vec = lanc_vecs + (lanc_step_idx - 1)*m_dim;
         for (size_t i = 0; i < m_dim; i++) current_lanc_vec[i] = w[i]/beta[lanc_step_idx];
 
-        mat_vec_mul(H, current_lanc_vec, m_dim, w);
-        alpha[lanc_step_idx] = vec_vec_dot(current_lanc_vec, w, m_dim);
+        lalg::mat_vec_mul(H, current_lanc_vec, m_dim, w);
+        alpha[lanc_step_idx] = lalg::vec_vec_dot(current_lanc_vec, w, m_dim);
 
         for (size_t i = 0; i < m_dim; i++) w[i] = w[i] - alpha[lanc_step_idx]*current_lanc_vec[i] - beta[lanc_step_idx]*prev_lanc_vec[i];
 
         H_krylov[lanc_step_idx*m_dim + lanc_step_idx] = alpha[lanc_step_idx];           // Main diagonal.
-        H_krylov[(lanc_step_idx - 1)*m_dim + lanc_step_idx] = beta[lanc_step_idx];     // Superdiagonal, aka. the row above the main diagonal on the same col.
-        H_krylov[lanc_step_idx*m_dim + (lanc_step_idx - 1)] = beta[lanc_step_idx];     // Subdiagonal, aka. the col behind the main diagonal on the same row.
+        H_krylov[(lanc_step_idx - 1)*m_dim + lanc_step_idx] = beta[lanc_step_idx];      // Superdiagonal, aka. the row above the main diagonal on the same col.
+        H_krylov[lanc_step_idx*m_dim + (lanc_step_idx - 1)] = beta[lanc_step_idx];      // Subdiagonal, aka. the col behind the main diagonal on the same row.
         // print_flattened_2d_array(H_krylov, n_lanc_steps, m_dim);
     }
 
