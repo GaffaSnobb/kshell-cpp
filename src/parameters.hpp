@@ -853,7 +853,7 @@ constexpr double clebsch_gordan_array[1944] = {
    0.0000000000000000,    0.0000000000000000,    1.0000000000000000
 };
 
-constexpr __device__ __constant__ double dev_const_clebsch_gordan_array[1944] = {
+constexpr __device__ __constant__ double dev_const_clebsch_gordan_array[1944] = {   // NOTE: Why am I not using the sparse version of this array on device?
    0.0000000000000000,    0.0000000000000000,    0.0000000000000000,
    0.0000000000000000,    0.0000000000000000,    0.0000000000000000,
    0.0000000000000000,    0.0000000000000000,    0.0000000000000000,
