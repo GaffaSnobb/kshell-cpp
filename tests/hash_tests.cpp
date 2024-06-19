@@ -3163,9 +3163,3 @@ void test_hash_collisions_Key6()
     }
     if (success) std::cout << "No collisions detected." << std::endl;
 }
-
-int main()
-{
-    test_hash_collisions_Key6();
-    return 0;
-}
