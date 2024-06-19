@@ -19,7 +19,8 @@ DEPS = $(addprefix $(PATHD), $(notdir $(SRCS:.cpp=.d)))
 EXEC = $(PATHB)run.out
 
 SRCS_TEST = $(addprefix $(PATHS_TEST), hash_tests.cpp)
-OBJS_TEST = $(addprefix $(PATHO), $(notdir $(SRCS_TEST:.cpp=.o)))
+OBJS_TEST = $(addprefix $(PATHO_TEST), $(notdir $(SRCS_TEST:.cpp=.o)))
+DEPS_TEST = $(addprefix $(PATHD_TEST), $(notdir $(SRCS_TEST:.cpp=.d)))
 EXEC_TEST = $(PATHB)tests.out
 
 # Build all
@@ -46,9 +47,9 @@ $(PATHO)%.o: $(PATHS)%.cpp
 $(PATHO_TEST)%.o: $(PATHS_TEST)%.cpp
 	$(CXX) $(CXXFLAGS_TEST) -c $< -o $@ -MF $(PATHD_TEST)$(notdir $*).d
 
--include $(DEPS)
+-include $(DEPS) $(DEPS_TEST)
 
 clean:
 	rm -rf $(PATHB)
 
-.PHONY: all clean test play setup
+.PHONY: all clean test setup
