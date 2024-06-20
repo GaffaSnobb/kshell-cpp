@@ -68,7 +68,7 @@ void lanczos(
     double w[m_dim];
     double *current_lanc_vec = nullptr; // tmp pointers for easier reading.
     double *prev_lanc_vec = nullptr;
-    double *next_lanc_vec = nullptr;
+    double *current_orth_lanc_vec = nullptr;
 
     // Generate normalised random initial Lanczos vector.
     std::random_device rd;
@@ -85,8 +85,12 @@ void lanczos(
     for (size_t i = 0; i < m_dim; i++) w[i] = w[i] - alpha*current_lanc_vec[i];
     H_krylov[0*m_dim + 0] = alpha;   // On the diagonal of H_krylov.
 
-    for (size_t lanc_step_idx = 1; lanc_step_idx < n_lanc_steps; lanc_step_idx++)
+    for (int64_t lanc_step_idx = 1; lanc_step_idx < n_lanc_steps; lanc_step_idx++)
     {   /*
+        NOTE: The index in this loop has to be signed because of the
+        comparison with a (sometimes) negative number in the
+        orthogonolisation loop index.
+
         Tridiagonal matrix with `n_lanc_steps` rows and `m_dim` cols,
         where d is the main diagonal, u is the superdiagonal, and l is
         the subdiagonal:
@@ -111,9 +115,16 @@ void lanczos(
         for (size_t i = 0; i < m_dim; i++) w[i] = w[i] - alpha*current_lanc_vec[i] - beta*prev_lanc_vec[i];
 
         // Re-orthogonalise w here!
+        for (int64_t lanc_orth_idx = 0; lanc_orth_idx < (lanc_step_idx - 2); lanc_orth_idx++)   // Maybe this should start at 1? 0 is the random vector.
+        {
+            current_orth_lanc_vec = lanc_vecs + lanc_orth_idx*m_dim;     // Pick the correct row in lanc_vecs.
+            const double tmp_dot = lalg::vec_vec_dot(current_orth_lanc_vec, w, m_dim);
+            for (size_t i = 0; i < m_dim; i++) w[i] = w[i] - current_orth_lanc_vec[i]*tmp_dot;
+        }
 
         H_krylov[(lanc_step_idx - 1)*m_dim + lanc_step_idx] = beta;      // Superdiagonal, aka. the row above the main diagonal on the same col.
         H_krylov[lanc_step_idx*m_dim + (lanc_step_idx - 1)] = beta;      // Subdiagonal, aka. the col behind the main diagonal on the same row.   
+        break;
     }
 
     printf("\n\n");
