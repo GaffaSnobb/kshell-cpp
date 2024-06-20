@@ -5,7 +5,7 @@
 
 namespace lanczos
 {
-void lanczos(const Interaction &interaction, const double *H);
+void lanczos(const Interaction &interaction, /*const*/ double *H);
 } // namespace lanczos
 
 
