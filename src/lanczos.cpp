@@ -16,7 +16,7 @@ namespace lanczos
 {
 void lanczos(
     const Interaction &interaction,
-    /*const*/ double *Htmplol//,
+    /*const*/ double *Hlool//,
     // const size_t n_lanc_steps
 )
 {   /*
@@ -44,24 +44,15 @@ void lanczos(
 
     https://stackoverflow.com/questions/68745223/eigenvectors-of-lanczos-algorithm-differ-from-numpy-linal-eig-for-complex-matr
     */
-    // const size_t m_dim = interaction.basis_states.size();
-    const size_t m_dim = 5;
-
-    double *H = new double[5*5]{    // tmp test to see if I can get the same as from the Python lanczos. 2025-11-18: Same result down to at least 6 decimals.
-        -2.65526241, -1.73658919,  1.05043732, -1.35836282, -0.60596862,
-        -1.73658919, -1.04257302, -0.38122495,  0.67562902, -0.56439201,
-         1.05043732, -0.38122495,  3.95116467, -0.66926132,  0.58965748,
-        -1.35836282,  0.67562902, -0.66926132, -0.28581319, -0.37952717,
-        -0.60596862, -0.56439201,  0.58965748, -0.37952717, -1.22605036
-    };
-
-    // double *H = (double *)testmat::seven_by_seven;
-    // const size_t m_dim = 7;
+   //    const size_t m_dim = interaction.basis_states.size();
+   
+    double *H = (double *)testmat::thirtytwo_by_thirtytwo;
+    const size_t m_dim = 32;
 
     // HERE!! The algorithm as it is now requires exlicit representation of the entire matrix, not just upper diag as it is now.
     // print_flattened_2d_array(H, m_dim, m_dim     );
 
-    const size_t n_lanc_steps = 5;
+    const size_t n_lanc_steps = 16;
     if (n_lanc_steps > m_dim) throw std::runtime_error("n_lanc_steps cannot be larger than m_dim!");
     
     double H_krylov[m_dim*n_lanc_steps];     // Flat 2D array. This is the tridiagonal matrix, T.
@@ -138,17 +129,28 @@ void lanczos(
     printf("\n\n");
     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> H_host_mapped(H_krylov, n_lanc_steps, m_dim);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(H_host_mapped);
-
-    printf("Approx. eigenvalues:\n");
-    for (auto elem : solver.eigenvalues().segment(0, 5)) printf("%f, ", elem);
-    printf("\n");
-
+    
     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> H_host_mapped_2(H, m_dim, m_dim);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver_2(H_host_mapped_2);
 
-    printf("Exact eigenvalues:\n");
-    for (auto elem : solver_2.eigenvalues().segment(0, 5)) printf("%f, ", elem);
+    printf("Approx, exact, diff\n");
+
+    auto approx_vals = solver.eigenvalues();
+    auto exact_vals  = solver_2.eigenvalues();
+
+    size_t n = std::min(approx_vals.size(), exact_vals.size());
+
+    for (size_t i = 0; i < n; ++i) {
+        printf("%f,  %f,  %f\n", approx_vals[i], exact_vals[i], std::abs(approx_vals[i] - exact_vals[i]));
+    }
     printf("\n");
+
+    // printf("Approx. eigenvalues:\n");
+    // for (auto elem : solver.eigenvalues()) printf("%f, ", elem);
+    // printf("\n");
+    // printf("Exact eigenvalues:\n");
+    // for (auto elem : solver_2.eigenvalues()) printf("%f, ", elem);
+    // printf("\n");
 
     // std::cout << "Eigenvalues:\n" << solver_2.eigenvalues() << std::endl;
 
