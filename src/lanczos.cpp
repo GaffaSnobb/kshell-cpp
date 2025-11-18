@@ -7,6 +7,7 @@
 #include "linear_algebra.hpp"
 #include "../external/eigen-3.4.0/Eigen/Dense"
 #include "../external/eigen-3.4.0/Eigen/Eigenvalues"
+#include "../tests/data/symmetric_test_matrices.hpp"
 
 using std::cout;
 using std::endl;
@@ -15,7 +16,7 @@ namespace lanczos
 {
 void lanczos(
     const Interaction &interaction,
-    /*const*/ double *H_lol//,
+    /*const*/ double *Htmplol//,
     // const size_t n_lanc_steps
 )
 {   /*
@@ -44,17 +45,24 @@ void lanczos(
     https://stackoverflow.com/questions/68745223/eigenvectors-of-lanczos-algorithm-differ-from-numpy-linal-eig-for-complex-matr
     */
     // const size_t m_dim = interaction.basis_states.size();
-    const size_t m_dim = 4;
-    const size_t n_lanc_steps = m_dim;
-    if (n_lanc_steps > m_dim) throw std::runtime_error("n_lanc_steps cannot be larger than m_dim!");
+    const size_t m_dim = 5;
 
-    double H[5*5] = {
+    double *H = new double[5*5]{    // tmp test to see if I can get the same as from the Python lanczos. 2025-11-18: Same result down to at least 6 decimals.
         -2.65526241, -1.73658919,  1.05043732, -1.35836282, -0.60596862,
         -1.73658919, -1.04257302, -0.38122495,  0.67562902, -0.56439201,
-        1.05043732, -0.38122495,  3.95116467, -0.66926132,  0.58965748,
+         1.05043732, -0.38122495,  3.95116467, -0.66926132,  0.58965748,
         -1.35836282,  0.67562902, -0.66926132, -0.28581319, -0.37952717,
         -0.60596862, -0.56439201,  0.58965748, -0.37952717, -1.22605036
     };
+
+    // double *H = (double *)testmat::seven_by_seven;
+    // const size_t m_dim = 7;
+
+    // HERE!! The algorithm as it is now requires exlicit representation of the entire matrix, not just upper diag as it is now.
+    // print_flattened_2d_array(H, m_dim, m_dim     );
+
+    const size_t n_lanc_steps = 5;
+    if (n_lanc_steps > m_dim) throw std::runtime_error("n_lanc_steps cannot be larger than m_dim!");
     
     double H_krylov[m_dim*n_lanc_steps];     // Flat 2D array. This is the tridiagonal matrix, T.
     double lanc_vecs[m_dim*n_lanc_steps];    // Flat 2D array. Also called Krylov vectors. Lanczos vectors are stored as rows in this matrix.
@@ -114,29 +122,35 @@ void lanczos(
 
         for (size_t i = 0; i < m_dim; i++) w[i] = w[i] - alpha*current_lanc_vec[i] - beta*prev_lanc_vec[i];
 
-        // Re-orthogonalise w here!
-        for (int64_t lanc_orth_idx = 0; lanc_orth_idx < (lanc_step_idx - 2); lanc_orth_idx++)   // Maybe this should start at 1? 0 is the random vector.
-        {
-            current_orth_lanc_vec = lanc_vecs + lanc_orth_idx*m_dim;     // Pick the correct row in lanc_vecs.
-            const double tmp_dot = lalg::vec_vec_dot(current_orth_lanc_vec, w, m_dim);
-            for (size_t i = 0; i < m_dim; i++) w[i] = w[i] - current_orth_lanc_vec[i]*tmp_dot;
-        }
+        // // Re-orthogonalise w here!
+        // for (int64_t lanc_orth_idx = 0; lanc_orth_idx < (lanc_step_idx - 2); lanc_orth_idx++)   // Maybe this should start at 1? 0 is the random vector.
+        // {
+        //     current_orth_lanc_vec = lanc_vecs + lanc_orth_idx*m_dim;     // Pick the correct row in lanc_vecs.
+        //     const double tmp_dot = lalg::vec_vec_dot(current_orth_lanc_vec, w, m_dim);
+        //     for (size_t i = 0; i < m_dim; i++) w[i] = w[i] - current_orth_lanc_vec[i]*tmp_dot;
+        // }
 
         H_krylov[(lanc_step_idx - 1)*m_dim + lanc_step_idx] = beta;      // Superdiagonal, aka. the row above the main diagonal on the same col.
         H_krylov[lanc_step_idx*m_dim + (lanc_step_idx - 1)] = beta;      // Subdiagonal, aka. the col behind the main diagonal on the same row.   
-        break;
+        // break;
     }
 
     printf("\n\n");
     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> H_host_mapped(H_krylov, n_lanc_steps, m_dim);
-    // cout << H_host_mapped << endl;
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(H_host_mapped);
-    std::cout << "Eigenvalues:\n" << solver.eigenvalues() << std::endl;
-    printf("\n\n");
+
+    printf("Approx. eigenvalues:\n");
+    for (auto elem : solver.eigenvalues().segment(0, 5)) printf("%f, ", elem);
+    printf("\n");
+
     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> H_host_mapped_2(H, m_dim, m_dim);
-    // cout << H_host_mapped_2 << endl;
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver_2(H_host_mapped_2);
-    std::cout << "Eigenvalues:\n" << solver_2.eigenvalues() << std::endl;
+
+    printf("Exact eigenvalues:\n");
+    for (auto elem : solver_2.eigenvalues().segment(0, 5)) printf("%f, ", elem);
+    printf("\n");
+
+    // std::cout << "Eigenvalues:\n" << solver_2.eigenvalues() << std::endl;
 
 }
 } // namespace lanczos
