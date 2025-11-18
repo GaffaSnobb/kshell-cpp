@@ -9,9 +9,9 @@ PATHD_TEST = $(PATHD)
 PATHO_TEST = $(PATHO)
 
 CXX = hipcc
-CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -Ofast# -Wno-unused-result
+CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -O0 -g# -Wno-unused-result
 CXXFLAGS_TEST = -std=c++20 -MMD -MP -Wall -fopenmp -O0
-# CXXFLAGS = -std=c++20 -MMD -MP -Wall -fopenmp -O0 -g	# Debug flags.
+HIPFLAGS = --hipcc-options
 
 SRCS = $(addprefix $(PATHS), tools.cpp loaders.cpp hamiltonian.cpp basis.cpp basic_solver.cpp generate_indices.cpp hamiltonian_bitset_representation.cpp hamiltonian_device.cpp diagnostics.cpp hip_wrappers.cpp lanczos.cpp linear_algebra.cpp)
 OBJS = $(addprefix $(PATHO), $(notdir $(SRCS:.cpp=.o)))
@@ -33,7 +33,7 @@ setup:
 
 # Link
 $(EXEC): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) $(HIPFLAGS) -o $@ $^
 
 # Link (tests)
 $(EXEC_TEST): $(OBJS_TEST)
@@ -41,7 +41,7 @@ $(EXEC_TEST): $(OBJS_TEST)
 
 # Rule to generate object files from cpp files
 $(PATHO)%.o: $(PATHS)%.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@ -MF $(PATHD)$(notdir $*).d
+	$(CXX) $(CXXFLAGS) $(HIPFLAGS) -c $< -o $@ -MF $(PATHD)$(notdir $*).d
 
 # Rule to generate object files from cpp files (tests)
 $(PATHO_TEST)%.o: $(PATHS_TEST)%.cpp
