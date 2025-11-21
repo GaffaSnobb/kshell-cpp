@@ -6,6 +6,7 @@
 namespace lanczos
 {
 void lanczos(const Interaction &interaction, /*const*/ double *H);
+void lanczos_from_kshell();
 } // namespace lanczos
 
 

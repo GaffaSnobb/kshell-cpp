@@ -46,13 +46,13 @@ void lanczos(
     */
    //    const size_t m_dim = interaction.basis_states.size();
    
-    double *H = (double *)testmat::thirtytwo_by_thirtytwo;
-    const size_t m_dim = 32;
+    double *H = (double *)testmat::seven_by_seven;
+    const size_t m_dim = 7;
 
     // HERE!! The algorithm as it is now requires exlicit representation of the entire matrix, not just upper diag as it is now.
     // print_flattened_2d_array(H, m_dim, m_dim     );
 
-    const size_t n_lanc_steps = 16;
+    const size_t n_lanc_steps = 7;
     if (n_lanc_steps > m_dim) throw std::runtime_error("n_lanc_steps cannot be larger than m_dim!");
     
     double H_krylov[m_dim*n_lanc_steps];     // Flat 2D array. This is the tridiagonal matrix, T.
@@ -155,4 +155,83 @@ void lanczos(
     // std::cout << "Eigenvalues:\n" << solver_2.eigenvalues() << std::endl;
 
 }
+
+void lanczos_from_kshell()
+{
+    const size_t max_lanc_vec = 10;
+    const double *H = testmat::eight_by_eight;
+    const size_t m_dim = 8;
+    const size_t n_lanc_steps = 5;
+
+    double tridiagonal_matrix[max_lanc_vec*max_lanc_vec];   // The matrix whose eigenvalues approximate the eigenvalues of the original matrix. 1D representation of 2D array.
+    double all_lanczos_vectors[ptn%max_local_dim*max_lanc_vec];   // Each row is a lanczos vector. 1D representation of 2D array.
+    double *lanc_vec_current = nullptr; // Will be set to the start address of each row of all_lanczos_vectors in the iv loop. For the lanczos vector of the current step.
+    double *lanc_vec_next = nullptr;    // Will be set to the start address of each row of all_lanczos_vectors in the iv loop. For the lanczos vector of the next step.
+
+    // Generate normalised random initial Lanczos vector.
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    gen.seed(1337);
+    std::normal_distribution<> distribution(0.0, 1.0); // mean, std
+    for (size_t i = 0; i < m_dim; i++) all_lanczos_vectors[i] = distribution(gen);    // Put it into the first row.
+    lalg::normalise_vector(all_lanczos_vectors, m_dim);
+
+    /* 
+    Here would be the "`maxiter` loop" aka. the thick-restart loop. Without it
+    there are no thick restarts.
+
+    for (size_t thick_restart_idx = 0; thick_restart_idx < max_thick_restarts; thick_restart_idx++)
+
+    the next loop would then be inside the thick restart loop.
+    */
+    for (size_t iv = 0; iv < (max_lanc_vec - 1); iv++)
+    {   /*
+        Equivalent to the `do iv = n_iv_start, max_lv-1` loop in KSHELL's
+        `lanczos.f90`.
+
+        This is a single thick restart. The tri-diagonal matrix is constructed
+        and diagonalised, then the convergence requirement is checked. If
+        convergence, the loop is broken (thick-restart loop is broken too) and
+        the eigenvalues are good.
+
+        A thick restart usually keeps some Lanczos (?) vectors from the
+        previous thick restart, meaning that `iv` doesn't have to start at 0.
+        */
+        lanc_vec_current = all_lanczos_vectors + m_dim*iv;  // Set the `lanc_vec_current` pointer to the start of the iv'th row.
+        lanc_vec_next = all_lanczos_vectors + m_dim*(iv + 1);
+
+        // call matvec(vec(iv), vec(iv+1))  Multiply the Hamiltonian with vec(iv) and store the res in vec(iv+1).
+        lalg::mat_vec_mul(H, lanc_vec_current, m_dim, lanc_vec_next);
+
+        // call dotprod(vec(iv+1), vec(iv), an)
+        const double diagonal_element = lalg::vec_vec_dot(lanc_vec_next, lanc_vec_current, m_dim);
+
+
+
+        // tridiagonal_matrix[iv, iv] = an
+
+        // te_last(:neig) = teval(:neig)   ! Keep the previous eigenvalues of the tri-diagonal matrix for checking convergence.
+
+        // Diagonalise the tri-matrix (at some interval, shouldn't be every time (computationally heavy))
+
+        // call reorth(iv+1)
+        // call dotprod(vec(iv+1), vec(iv+1), bn)   ! The norm of the residual vector.
+
+        // Check the norm bn. The norm is proportional to the error of the Lanczos approximation.
+        // If it is sufficiently small, stop the Lanczos procedure because the eigenvalues of the tri-matrix are sufficiently close to the true eigenvalues.
+
+        // Populate upper and lower diag of the tri-matrix.
+        // bn = sqrt(bn)
+        // tridiagonal_matrix[iv, iv+1] = bn
+        // tridiagonal_matrix[iv+1, iv] = bn
+
+        // x = 1.d0/bn
+        // do mq = 1, ndim
+        //     vec(iv+1)%p(mq) = x * vec(iv+1)%p(mq)
+        // end do
+
+
+    }
+}
+
 } // namespace lanczos
