@@ -162,11 +162,22 @@ void lanczos_from_kshell()
     const double *H = testmat::eight_by_eight;
     const size_t m_dim = 8;
     const size_t n_lanc_steps = 5;
+    const size_t n_skip_diag = 2;   // Diagonalise only every n_skip_diag'th iteration.
 
-    double tridiagonal_matrix[max_lanc_vec*max_lanc_vec];   // The matrix whose eigenvalues approximate the eigenvalues of the original matrix. 1D representation of 2D array.
-    double all_lanczos_vectors[ptn%max_local_dim*max_lanc_vec];   // Each row is a lanczos vector. 1D representation of 2D array.
-    double *lanc_vec_current = nullptr; // Will be set to the start address of each row of all_lanczos_vectors in the iv loop. For the lanczos vector of the current step.
-    double *lanc_vec_next = nullptr;    // Will be set to the start address of each row of all_lanczos_vectors in the iv loop. For the lanczos vector of the next step.
+    // double tridiagonal_matrix[max_lanc_vec*max_lanc_vec];   // The matrix whose eigenvalues approximate the eigenvalues of the original matrix. 1D representation of 2D array.
+    double tridiagonal_matrix_diagonal[max_lanc_vec];
+    array_tools::fill_array(tridiagonal_matrix_diagonal, max_lanc_vec, 0);
+    double tridiagonal_matrix_offdiagonal[max_lanc_vec - 1];
+    array_tools::fill_array(tridiagonal_matrix_offdiagonal, max_lanc_vec - 1, 0);
+    double tridiagonal_matrix_offdiagonal_tmp[max_lanc_vec - 1];    // tmp array because dsterf uses the off-diag array as tmp storage for its calculations, aka. destroying the array (but I wanna keep the values).
+    double tridiagonal_matrix_eigenvals[max_lanc_vec];
+    array_tools::fill_array(tridiagonal_matrix_eigenvals, max_lanc_vec, 1e6);
+    double tridiagonal_matrix_eigenvals_previous[max_lanc_vec];
+    double all_lanczos_vectors[m_dim*max_lanc_vec];   // Each row is a lanczos vector of length `m_dim`. 1D representation of 2D array.
+    double *lanczos_vec_current = nullptr; // Will be set to the start address of each row of all_lanczos_vectors in the iv loop. For the lanczos vector of the current step.
+    double *lanczos_vec_next = nullptr;    // Will be set to the start address of each row of all_lanczos_vectors in the iv loop. For the lanczos vector of the next step.
+
+    print(tridiagonal_matrix_eigenvals_previous, max_lanc_vec);
 
     // Generate normalised random initial Lanczos vector.
     std::random_device rd;
@@ -197,22 +208,40 @@ void lanczos_from_kshell()
         A thick restart usually keeps some Lanczos (?) vectors from the
         previous thick restart, meaning that `iv` doesn't have to start at 0.
         */
-        lanc_vec_current = all_lanczos_vectors + m_dim*iv;  // Set the `lanc_vec_current` pointer to the start of the iv'th row.
-        lanc_vec_next = all_lanczos_vectors + m_dim*(iv + 1);
+        lanczos_vec_current = all_lanczos_vectors + m_dim*iv;  // Set the `lanczos_vec_current` pointer to the start of the iv'th row.
+        lanczos_vec_next = all_lanczos_vectors + m_dim*(iv + 1);
 
         // call matvec(vec(iv), vec(iv+1))  Multiply the Hamiltonian with vec(iv) and store the res in vec(iv+1).
-        lalg::mat_vec_mul(H, lanc_vec_current, m_dim, lanc_vec_next);
+        lalg::mat_vec_mul(H, lanczos_vec_current, m_dim, lanczos_vec_next); // lanczos_vec_next = H*lanczos_vec_current
 
         // call dotprod(vec(iv+1), vec(iv), an)
-        const double diagonal_element = lalg::vec_vec_dot(lanc_vec_next, lanc_vec_current, m_dim);
-
-
-
         // tridiagonal_matrix[iv, iv] = an
-
+        const double diagonal_element = lalg::vec_vec_dot(lanczos_vec_next, lanczos_vec_current, m_dim);
+        tridiagonal_matrix_diagonal[iv] = diagonal_element; // Or should it start at iv + 1?
+        
+        
         // te_last(:neig) = teval(:neig)   ! Keep the previous eigenvalues of the tri-diagonal matrix for checking convergence.
+        std::memcpy(tridiagonal_matrix_eigenvals_previous, tridiagonal_matrix_eigenvals, max_lanc_vec*sizeof(double));
 
         // Diagonalise the tri-matrix (at some interval, shouldn't be every time (computationally heavy))
+        if ( ((iv%n_skip_diag) == 0) or (iv == (max_lanc_vec - 2)) )
+        {   /*
+            Diagonalise the tri-diagonal matrix. Diagonalise only every
+            n_skip_diag'th iteration or at the last iteration of the iv
+            loop.
+
+            Copy diagonal arr to eigenvalues arr because the input array
+            to dsterf with diagonals will be overwritten with
+            eigenvalues.
+
+            Copy off-diag arr to a tmp arr because `dsterf` uses the
+            off-diag arr for tmp storage and overwrites the data.
+            */
+            std::memcpy(tridiagonal_matrix_eigenvals, tridiagonal_matrix_diagonal, max_lanc_vec*sizeof(double));
+            std::memcpy(tridiagonal_matrix_offdiagonal_tmp, tridiagonal_matrix_offdiagonal, (max_lanc_vec - 1)*sizeof(double));
+            lalg::diagonalise(max_lanc_vec, tridiagonal_matrix_eigenvals, tridiagonal_matrix_offdiagonal_tmp);
+            
+        }
 
         // call reorth(iv+1)
         // call dotprod(vec(iv+1), vec(iv+1), bn)   ! The norm of the residual vector.
