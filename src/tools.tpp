@@ -12,148 +12,6 @@ using std::endl;
 using std::vector;
 using std::string;
 
-template <typename T1, typename T2>
-void print_flattened_2d_array(const T1* arr, const T2 size)
-{
-    for (size_t row_idx = 0; row_idx < size; row_idx++)
-    {
-        for (size_t col_idx = 0; col_idx < size; col_idx++)
-        {
-            cout << arr[row_idx*size + col_idx] << ", ";
-        }
-        cout << endl;
-    }
-    cout << endl;
-}
-
-template <typename T1, typename T2>
-void print_flattened_2d_array(const T1* arr, const T2 n_rows, const T2 n_cols)
-{
-    for (size_t row_idx = 0; row_idx < n_rows; row_idx++)
-    {
-        for (size_t col_idx = 0; col_idx < n_cols; col_idx++)
-        {
-            cout << std::setw(10) << arr[row_idx*n_cols + col_idx] << ", ";
-        }
-        cout << endl;
-    }
-    cout << endl;
-}
-
-template <typename T1, typename T2>
-void write_flattened_2d_array_to_file(T1* arr, const T2 size, const std::string& filename)
-{
-    /*
-    Write the flattened 2D array as a true 2D array. Write it with valid
-    C++ syntax, example:
-
-        constexpr double arr[3][3] = {
-            {1.64658, 0, 0},
-            {0, -3.9478, 0},
-            {0, 0, -3.16354}
-        };
-    */
-    std::string path = "tests/data/";
-    path.append(filename);
-    path.append(".hpp");
-
-    std::ofstream file(path);
-
-    if (!file.is_open())
-    {
-        std::cerr << "Error opening file for writing." << std::endl;
-        return;
-    }
-
-    for (size_t row_idx = 0; row_idx < size; row_idx++)
-    {
-        /*
-        Copies the values from the upper triangle to the lower triangle.
-        */
-        for (size_t col_idx = row_idx + 1; col_idx < size; col_idx++)
-        {
-            arr[col_idx*size + row_idx] = arr[row_idx*size + col_idx];
-        }
-    }
-
-    // size_t max_width = 15;
-    file << "constexpr double arr[" << size << "][" << size << "] = {\n";
-
-    for (size_t row_idx = 0; row_idx < size; row_idx++)
-    {
-        file << "    {";
-        for (size_t col_idx = 0; col_idx < size; col_idx++)
-        {
-            // file << std::left << std::setw(max_width) << arr[row_idx*size + col_idx];
-            if (col_idx != (size - 1))
-            {
-                file << arr[row_idx*size + col_idx] << ", ";
-            }
-            else
-            {
-                file << arr[row_idx*size + col_idx];
-            }
-        }
-        if (row_idx != (size - 1))
-        {
-            file << "}," << '\n';
-        }
-        else
-        {
-            file << "}" << '\n';
-        }
-    }
-    file << "};";
-
-    file.close();
-}
-
-
-template <typename T1, typename T2, typename T3>
-bool compare_arrays(T1* arr1, T2* arr2, T3 size)
-{
-    for (size_t i = 0; i < size; i++) if (std::abs(arr1[i] - arr2[i]) > 1e-13) return false;
-    return true;
-}
-
-template <typename T1, typename T2, typename T3>
-bool compare_arrays_upper_triangle(T1* arr1, vector<T2> arr2, T3 size)
-{
-    for (size_t row_idx = 0; row_idx < size; row_idx++)
-    {
-        for (size_t col_idx = row_idx; col_idx < size; col_idx++)
-        {
-            size_t flat_idx = row_idx*size + col_idx;
-            if (std::abs(arr1[flat_idx] - arr2[flat_idx]) > 1e-3)
-            {   
-                // cout << "flat_idx: " << flat_idx << ", arr1[flat_idx]: " << arr1[flat_idx] << ", arr2[flat_idx]: " << arr2[flat_idx] << ", " << std::abs(arr1[flat_idx] - arr2[flat_idx]) << endl;
-                // cout << "LOL" << endl;
-                // cout << (arr1[flat_idx] - arr2[flat_idx]) << endl;
-                // exit(0);
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-template <typename T1, typename T2>
-bool compare_arrays_upper_triangle(T1* arr1, T1* arr2, T2 size)
-{
-    for (size_t row_idx = 0; row_idx < size; row_idx++)
-    {
-        for (size_t col_idx = row_idx; col_idx < size; col_idx++)
-        {
-            size_t flat_idx = row_idx*size + col_idx;
-            if (std::abs(arr1[flat_idx] - arr2[flat_idx]) > 1e-13)
-            {   
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 template <typename T>
 void print_bit_representation(const T& value)
 {
@@ -269,3 +127,170 @@ void print_loop_timer(vector<T0>& loop_timings, T1 idx, T2 n_iterations)
     cout << " [est. time left: ";
     cout << std::setfill(' ') << std::setw(10) << (n_iterations - (idx + 1))*mean_time << " s]" << std::flush;
 }
+
+template <typename T>
+void print(double *arr, T len)
+{
+    for (size_t i = 0; i < len; i++)
+    {
+        cout << arr[i] << ", ";
+    }
+    cout << endl;
+    return;
+}
+
+namespace array_tools
+{
+template <typename T1, typename T2>
+void print_flattened_2d_array(const T1* arr, const T2 size)
+{
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
+    {
+        for (size_t col_idx = 0; col_idx < size; col_idx++)
+        {
+            cout << arr[row_idx*size + col_idx] << ", ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+template <typename T1, typename T2>
+void print_flattened_2d_array(const T1* arr, const T2 n_rows, const T2 n_cols)
+{
+    for (size_t row_idx = 0; row_idx < n_rows; row_idx++)
+    {
+        for (size_t col_idx = 0; col_idx < n_cols; col_idx++)
+        {
+            cout << std::setw(10) << arr[row_idx*n_cols + col_idx] << ", ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+template <typename T1, typename T2>
+void write_flattened_2d_array_to_file(T1* arr, const T2 size, const std::string& filename)
+{
+    /*
+    Write the flattened 2D array as a true 2D array. Write it with valid
+    C++ syntax, example:
+
+        constexpr double arr[3][3] = {
+            {1.64658, 0, 0},
+            {0, -3.9478, 0},
+            {0, 0, -3.16354}
+        };
+    */
+    std::string path = "tests/data/";
+    path.append(filename);
+    path.append(".hpp");
+
+    std::ofstream file(path);
+
+    if (!file.is_open())
+    {
+        std::cerr << "Error opening file for writing." << std::endl;
+        return;
+    }
+
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
+    {
+        /*
+        Copies the values from the upper triangle to the lower triangle.
+        */
+        for (size_t col_idx = row_idx + 1; col_idx < size; col_idx++)
+        {
+            arr[col_idx*size + row_idx] = arr[row_idx*size + col_idx];
+        }
+    }
+
+    // size_t max_width = 15;
+    file << "constexpr double arr[" << size << "][" << size << "] = {\n";
+
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
+    {
+        file << "    {";
+        for (size_t col_idx = 0; col_idx < size; col_idx++)
+        {
+            // file << std::left << std::setw(max_width) << arr[row_idx*size + col_idx];
+            if (col_idx != (size - 1))
+            {
+                file << arr[row_idx*size + col_idx] << ", ";
+            }
+            else
+            {
+                file << arr[row_idx*size + col_idx];
+            }
+        }
+        if (row_idx != (size - 1))
+        {
+            file << "}," << '\n';
+        }
+        else
+        {
+            file << "}" << '\n';
+        }
+    }
+    file << "};";
+
+    file.close();
+}
+
+template <typename T1, typename T2, typename T3>
+bool compare_arrays(T1* arr1, T2* arr2, T3 size)
+{
+    for (size_t i = 0; i < size; i++) if (std::abs(arr1[i] - arr2[i]) > 1e-13) return false;
+    return true;
+}
+
+template <typename T1, typename T2, typename T3>
+bool compare_arrays_upper_triangle(T1* arr1, vector<T2> arr2, T3 size)
+{
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
+    {
+        for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+        {
+            size_t flat_idx = row_idx*size + col_idx;
+            if (std::abs(arr1[flat_idx] - arr2[flat_idx]) > 1e-3)
+            {   
+                // cout << "flat_idx: " << flat_idx << ", arr1[flat_idx]: " << arr1[flat_idx] << ", arr2[flat_idx]: " << arr2[flat_idx] << ", " << std::abs(arr1[flat_idx] - arr2[flat_idx]) << endl;
+                // cout << "LOL" << endl;
+                // cout << (arr1[flat_idx] - arr2[flat_idx]) << endl;
+                // exit(0);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+template <typename T1, typename T2>
+bool compare_arrays_upper_triangle(T1* arr1, T1* arr2, T2 size)
+{
+    for (size_t row_idx = 0; row_idx < size; row_idx++)
+    {
+        for (size_t col_idx = row_idx; col_idx < size; col_idx++)
+        {
+            size_t flat_idx = row_idx*size + col_idx;
+            if (std::abs(arr1[flat_idx] - arr2[flat_idx]) > 1e-13)
+            {   
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+template <typename T0, typename T1, typename T2>
+void fill_array(T0 *arr, T1 len, T2 val)
+{   /*
+    Fill the array `arr` with the value `val`.
+    */
+    for (size_t i = 0; i < len; i++)
+    {
+        arr[i] = val;
+    }
+    return;
+}
+}   // namespace array_tools

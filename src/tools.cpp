@@ -347,3 +347,18 @@ void input()
     string empty;
     std::getline(std::cin, empty);
 }
+
+namespace array_tools
+{
+// void vec_copy(const double *vec_in, const size_t len, double *vec_out)
+// {   /*
+//     Copy the contents from `vec_in` to `vec_out`.
+
+//     USE std::memcpy INSTEAD
+//     */
+//     for (size_t i = 0; i < len; i++)
+//     {
+//         vec_out[i] = vec_in[i];
+//     }
+// }
+}   // namespace array_tools
