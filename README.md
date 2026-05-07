@@ -1,3 +1,5 @@
+# This repo has moved to https://git.joncloud.no/GaffaSnobb/kshell-cpp
+
 # Install
 ## ROCm
 Tested with:
